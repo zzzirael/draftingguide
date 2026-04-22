@@ -1,0 +1,16 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #0a0e1a;
+  color: #c8aa6e;
+  font-family: 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+
+button {
+  cursor: pointer;
+}

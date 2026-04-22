@@ -1,0 +1,121 @@
+import sqlite3
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional
+
+from engine.scorer import suggest_picks, DraftState
+
+app = FastAPI(title="LoL Competitive Draft Simulator")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+DB_PATH = "data/lol.db"
+
+
+class DraftRequest(BaseModel):
+    allied_picks:        list[str] = []
+    enemy_picks:         list[str] = []
+    banned:              list[str] = []
+    available_champions: list[str]
+    league:              Optional[str] = None
+    patch_major:         Optional[str] = None
+    is_playoffs:         Optional[bool] = None
+    top_n:               int = 5
+
+
+@app.post("/suggest")
+def suggest(req: DraftRequest):
+    state = DraftState(
+        allied_picks=req.allied_picks,
+        enemy_picks=req.enemy_picks,
+        banned=req.banned,
+        league=req.league,
+        patch_major=req.patch_major,
+        is_playoffs=req.is_playoffs,
+    )
+    suggestions = suggest_picks(
+        req.available_champions, state, DB_PATH, top_n=req.top_n
+    )
+    return {"suggestions": suggestions}
+
+
+@app.get("/leagues")
+def list_leagues():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        rows = conn.execute("SELECT DISTINCT league FROM matches ORDER BY league").fetchall()
+        conn.close()
+        return {"leagues": [r[0] for r in rows]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/patches")
+def list_patches():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        rows = conn.execute(
+            "SELECT DISTINCT patch_major FROM matches ORDER BY patch_major DESC"
+        ).fetchall()
+        conn.close()
+        return {"patches": [r[0] for r in rows]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/champions")
+def list_champions():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        rows = conn.execute(
+            "SELECT DISTINCT champion FROM match_picks WHERE champion IS NOT NULL ORDER BY champion"
+        ).fetchall()
+        conn.close()
+        return {"champions": [r[0] for r in rows]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/stats/{champion}")
+def champion_stats(champion: str, league: Optional[str] = None, patch_major: Optional[str] = None):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        clauses = ["champion = ?"]
+        params = [champion]
+        if league:
+            clauses.append("league = ?")
+            params.append(league)
+        if patch_major:
+            clauses.append("patch_major = ?")
+            params.append(patch_major)
+        where = " AND ".join(clauses)
+
+        row = conn.execute(
+            f"SELECT SUM(wins), SUM(games) FROM counter_matrix WHERE {where}",
+            params
+        ).fetchone()
+        conn.close()
+
+        total_wins = row[0] or 0
+        total_games = row[1] or 0
+        winrate = round(total_wins / total_games, 4) if total_games else None
+
+        return {
+            "champion": champion,
+            "games": total_games,
+            "wins": total_wins,
+            "winrate": winrate,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
