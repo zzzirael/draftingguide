@@ -20,8 +20,6 @@ app.add_middleware(
 DB_PATH = "data/lol.db"
 
 
-# ── Schemas ──────────────────────────────────────────────────────────────────
-
 class DraftRequest(BaseModel):
     allied_picks:        list[str] = []
     enemy_picks:         list[str] = []
@@ -32,84 +30,68 @@ class DraftRequest(BaseModel):
     patch_major:         Optional[str] = None
     is_playoffs:         bool = False
     top_n:               int = 10
+    active_position:     Optional[str] = None   # top|jng|mid|bot|sup — lane do slot ativo
 
 
-# ── Endpoints básicos ─────────────────────────────────────────────────────────
+# ── Endpoints básicos ────────────────────────────────────────────────────────
 
 @app.get("/health")
 def health():
     predictor = get_predictor()
-    return {
-        "status": "ok",
-        "ml_model_loaded": predictor is not None,
-    }
+    return {"status": "ok", "ml_model_loaded": predictor is not None}
 
 
 @app.get("/leagues")
 def list_leagues():
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        rows = conn.execute("SELECT DISTINCT league FROM matches ORDER BY league").fetchall()
-        conn.close()
-        return {"leagues": [r[0] for r in rows]}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute("SELECT DISTINCT league FROM matches ORDER BY league").fetchall()
+    conn.close()
+    return {"leagues": [r[0] for r in rows]}
 
 
 @app.get("/patches")
 def list_patches():
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        rows = conn.execute(
-            "SELECT DISTINCT patch_major FROM matches ORDER BY patch_major DESC"
-        ).fetchall()
-        conn.close()
-        return {"patches": [r[0] for r in rows]}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute(
+        "SELECT DISTINCT patch_major FROM matches ORDER BY patch_major DESC"
+    ).fetchall()
+    conn.close()
+    return {"patches": [r[0] for r in rows]}
 
 
 @app.get("/champions")
 def list_champions():
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        rows = conn.execute(
-            "SELECT DISTINCT champion FROM match_picks WHERE champion IS NOT NULL ORDER BY champion"
-        ).fetchall()
-        conn.close()
-        return {"champions": [r[0] for r in rows]}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute(
+        "SELECT DISTINCT champion FROM match_picks WHERE champion IS NOT NULL ORDER BY champion"
+    ).fetchall()
+    conn.close()
+    return {"champions": [r[0] for r in rows]}
 
 
 @app.get("/stats/{champion}")
 def champion_stats(champion: str, league: Optional[str] = None, patch_major: Optional[str] = None):
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        clauses = ["champion = ?"]
-        params  = [champion]
-        if league:
-            clauses.append("league = ?"); params.append(league)
-        if patch_major:
-            clauses.append("patch_major = ?"); params.append(patch_major)
-        where = " AND ".join(clauses)
-        row = conn.execute(
-            f"SELECT SUM(wins), SUM(games) FROM counter_matrix WHERE {where}", params
-        ).fetchone()
-        conn.close()
-        total_wins  = row[0] or 0
-        total_games = row[1] or 0
-        return {
-            "champion": champion,
-            "games":    total_games,
-            "wins":     total_wins,
-            "winrate":  round(total_wins / total_games, 4) if total_games else None,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    conn = sqlite3.connect(DB_PATH)
+    clauses = ["champion = ?"]
+    params  = [champion]
+    if league:      clauses.append("league = ?");       params.append(league)
+    if patch_major: clauses.append("patch_major = ?");  params.append(patch_major)
+    where = " AND ".join(clauses)
+    row = conn.execute(
+        f"SELECT SUM(wins), SUM(games) FROM counter_matrix WHERE {where}", params
+    ).fetchone()
+    conn.close()
+    total_wins  = row[0] or 0
+    total_games = row[1] or 0
+    return {
+        "champion": champion,
+        "games":    total_games,
+        "wins":     total_wins,
+        "winrate":  round(total_wins / total_games, 4) if total_games else None,
+    }
 
 
-# ── Endpoint legado (scorer heurístico) ──────────────────────────────────────
+# ── Endpoint legado ──────────────────────────────────────────────────────────
 
 @app.post("/suggest")
 def suggest(req: DraftRequest):
@@ -121,20 +103,16 @@ def suggest(req: DraftRequest):
         patch_major=req.patch_major,
     )
     available = req.available_champions or _all_champions()
-    suggestions = suggest_picks(available, state, DB_PATH, top_n=req.top_n)
-    return {"suggestions": suggestions}
+    return {"suggestions": suggest_picks(available, state, DB_PATH, top_n=req.top_n)}
 
 
-# ── Endpoint ML ───────────────────────────────────────────────────────────────
+# ── Endpoint ML principal ─────────────────────────────────────────────────────
 
 @app.post("/suggest-ml")
 def suggest_ml(req: DraftRequest):
     predictor = get_predictor()
     if predictor is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Modelo ML não encontrado. Execute python setup.py primeiro."
-        )
+        raise HTTPException(status_code=503, detail="Modelo ML não encontrado. Execute python setup.py primeiro.")
 
     state = PredictorState(
         allied_picks=req.allied_picks,
@@ -146,13 +124,31 @@ def suggest_ml(req: DraftRequest):
         is_playoffs=req.is_playoffs,
     )
 
-    available = req.available_champions or _all_champions()
+    available     = req.available_champions or _all_champions()
     current_prob  = predictor.predict_win_probability(state)
-    suggestions   = predictor.suggest_picks(available, state, top_n=req.top_n)
+
+    # Sugestões flat (top N)
+    suggestions = predictor.suggest_picks(available, state, top_n=req.top_n)
+
+    # Sugestões agrupadas por lane
+    by_lane = predictor.suggest_by_lane(available, state, top_per_lane=3)
+
+    # Counter analysis para cada pick inimigo
+    counter_analysis = []
+    for enemy_champ in req.enemy_picks:
+        counters = predictor.get_counter_suggestions(enemy_champ, available, state, top_n=4)
+        if counters:
+            counter_analysis.append({
+                "vs":        enemy_champ,
+                "best_picks": counters,
+            })
 
     return {
         "current_win_probability": current_prob,
-        "suggestions": suggestions,
+        "active_position":         req.active_position,
+        "suggestions":             suggestions,
+        "by_lane":                 by_lane,
+        "counter_analysis":        counter_analysis,
     }
 
 
@@ -161,7 +157,6 @@ def win_probability(req: DraftRequest):
     predictor = get_predictor()
     if predictor is None:
         raise HTTPException(status_code=503, detail="Modelo ML não carregado.")
-
     state = PredictorState(
         allied_picks=req.allied_picks,
         enemy_picks=req.enemy_picks,
@@ -175,7 +170,7 @@ def win_probability(req: DraftRequest):
     return {"win_probability": prob, "loss_probability": round(1 - prob, 4)}
 
 
-# ── helpers ───────────────────────────────────────────────────────────────────
+# ── Helper ────────────────────────────────────────────────────────────────────
 
 def _all_champions() -> list[str]:
     try:

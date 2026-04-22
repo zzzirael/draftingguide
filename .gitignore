@@ -1,9 +1,6 @@
 __pycache__/
 *.py[cod]
-*.db
 data/raw/
-data/model.joblib
-data/model_metadata.json
 .env
 node_modules/
 dist/

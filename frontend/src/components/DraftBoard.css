@@ -1,10 +1,54 @@
 .draft-root {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 10px;
   flex: 1;
   padding: 16px;
   min-height: 0;
+}
+
+/* ── Phase bar ───────────────────────────────────────────── */
+.phase-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: #050d17;
+  border: 1px solid #1e2d40;
+  border-radius: 5px;
+  border-left-width: 3px;
+  flex-shrink: 0;
+}
+
+.phase-steps {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.phase-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1e2d40;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.phase-dot.ban  { border-radius: 2px; }
+.phase-dot.done { opacity: 0.4; }
+
+.phase-dot.current.blue { background: #4a9fdc; box-shadow: 0 0 6px #4a9fdc88; transform: scale(1.4); }
+.phase-dot.current.red  { background: #e84057; box-shadow: 0 0 6px #e8405788; transform: scale(1.4); }
+.phase-dot.done.pick.blue { background: #1a4a7a; }
+.phase-dot.done.pick.red  { background: #7a1a1a; }
+.phase-dot.done.ban       { background: #3a2a10; }
+
+.phase-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 /* ── Main three-column grid ─────────────────────────────── */

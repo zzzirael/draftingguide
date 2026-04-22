@@ -1,144 +1,178 @@
 import './SuggestionPanel.css'
 
+const LANE_LABELS = { top: 'Top', jng: 'Jungle', mid: 'Mid', bot: 'Bot', sup: 'Suporte' }
+const LANE_ORDER  = ['top', 'jng', 'mid', 'bot', 'sup']
+
 function WinBar({ probability, mySide }) {
-  const myPct   = Math.round((probability ?? 0.5) * 100)
-  const oppPct  = 100 - myPct
-  const isBlue  = mySide === 'blue'
+  const myPct  = Math.round((probability ?? 0.5) * 100)
+  const oppPct = 100 - myPct
+  const isBlue = mySide === 'blue'
+  const bluePct = isBlue ? myPct  : oppPct
+  const redPct  = isBlue ? oppPct : myPct
+
+  const getColor = (pct) => pct >= 55 ? '#4caf50' : pct >= 45 ? '#c8aa6e' : '#e84057'
 
   return (
     <div className="win-bar-wrap">
       <div className="win-bar-labels">
-        <span className="wbl-side blue-text">Azul {isBlue ? '(Você)' : ''}</span>
+        <span style={{ color: '#4a9fdc', fontWeight: 700, fontSize: '0.8rem' }}>
+          Azul {isBlue ? '(Você)' : ''} — {bluePct}%
+        </span>
         <span className="wbl-center">Probabilidade de Vitória</span>
-        <span className="wbl-side red-text">Vermelho {!isBlue ? '(Você)' : ''}</span>
+        <span style={{ color: '#e84057', fontWeight: 700, fontSize: '0.8rem' }}>
+          {redPct}% — Vermelho {!isBlue ? '(Você)' : ''}
+        </span>
       </div>
       <div className="win-bar">
-        <div
-          className="win-bar-blue"
-          style={{ width: `${isBlue ? myPct : oppPct}%` }}
-        />
-        <div
-          className="win-bar-red"
-          style={{ width: `${isBlue ? oppPct : myPct}%` }}
-        />
+        <div className="win-bar-blue" style={{ width: `${bluePct}%` }} />
+        <div className="win-bar-red"  style={{ width: `${redPct}%`  }} />
       </div>
-      <div className="win-bar-pcts">
-        <span className="blue-text">{isBlue ? myPct : oppPct}%</span>
-        <span className="red-text">{isBlue ? oppPct : myPct}%</span>
+      <div className="win-bar-note" style={{ color: getColor(isBlue ? bluePct : redPct) }}>
+        {isBlue ? bluePct : redPct}% de chance de vitória para o seu time
       </div>
     </div>
   )
 }
 
-function SuggestionRow({ rank, data, onClick }) {
-  const { champion, win_probability, delta } = data
-  const pct      = Math.round(win_probability * 100)
-  const deltaPct = delta >= 0
-    ? `+${Math.round(delta * 100)}%`
-    : `${Math.round(delta * 100)}%`
-  const deltaClass = delta >= 0.03 ? 'delta-good' : delta >= 0 ? 'delta-neutral' : 'delta-bad'
-
+function MiniChamp({ champion, winProb, delta, onClick }) {
+  const pct      = Math.round(winProb * 100)
+  const deltaPct = Math.round(Math.abs(delta) * 100)
+  const isPos    = delta >= 0
   return (
-    <div className="suggestion-row" onClick={() => onClick && onClick(champion)}>
-      <span className="sug-rank">#{rank}</span>
-      <div className="sug-avatar">{champion.slice(0, 2)}</div>
-      <span className="sug-name">{champion}</span>
-      <div className="sug-bar-wrap">
-        <div className="sug-bar">
-          <div className="sug-bar-fill" style={{ width: `${pct}%` }} />
-        </div>
-        <span className="sug-pct">{pct}%</span>
+    <div className="mini-champ" onClick={() => onClick && onClick(champion)} title={`${champion} — ${pct}% win rate`}>
+      <div className="mini-avatar">{champion.slice(0, 2)}</div>
+      <div className="mini-info">
+        <span className="mini-name">{champion}</span>
+        <span className={`mini-delta ${isPos ? 'pos' : 'neg'}`}>
+          {isPos ? '+' : '-'}{deltaPct}%
+        </span>
       </div>
-      <span className={`sug-delta ${deltaClass}`}>{deltaPct}</span>
+      <div className="mini-bar">
+        <div className="mini-bar-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="mini-pct">{pct}%</span>
     </div>
   )
 }
 
-function CompTips({ alliedPicks, enemyPicks }) {
-  const tips = []
-
-  const n = alliedPicks.filter(Boolean).length
-  const nEnemy = enemyPicks.filter(Boolean).length
-
-  if (n === 0) {
-    tips.push({ icon: '💡', text: 'Selecione o primeiro pick para ver sugestões personalizadas.' })
-  } else {
-    if (n < 5) {
-      tips.push({ icon: '🎯', text: `Composição parcial: ${n}/5 picks. Continue para aumentar a precisão.` })
-    } else {
-      tips.push({ icon: '✅', text: 'Composição completa! O modelo avalia a comp inteira.' })
-    }
-    if (nEnemy > 0) {
-      tips.push({ icon: '⚔', text: `${nEnemy} pick(s) inimigo(s) identificados — counters considerados no score.` })
-    }
-    if (n >= 3) {
-      tips.push({ icon: '📊', text: 'Score calculado por LightGBM treinado com dados competitivos reais, ponderados por patch.' })
-    }
-  }
+function LaneSuggestions({ byLane, activeSlot, onPick }) {
+  const activePos = activeSlot?.type === 'pick' ? activeSlot?.position : null
 
   return (
-    <div className="comp-tips">
-      {tips.map((t, i) => (
-        <div key={i} className="tip-row">
-          <span className="tip-icon">{t.icon}</span>
-          <span className="tip-text">{t.text}</span>
+    <div className="lane-suggestions">
+      {LANE_ORDER.map(lane => {
+        const picks   = byLane[lane] || []
+        const isActive = lane === activePos
+        return (
+          <div key={lane} className={`lane-row ${isActive ? 'lane-active' : ''}`}>
+            <div className="lane-header">
+              <span className="lane-icon">{getLaneIcon(lane)}</span>
+              <span className="lane-name">{LANE_LABELS[lane]}</span>
+              {isActive && <span className="lane-now">← agora</span>}
+            </div>
+            <div className="lane-picks">
+              {picks.length === 0 && <span className="lane-empty">—</span>}
+              {picks.map(p => (
+                <MiniChamp
+                  key={p.champion}
+                  champion={p.champion}
+                  winProb={p.win_probability}
+                  delta={p.delta}
+                  onClick={onPick}
+                />
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function CounterAnalysis({ counterAnalysis, onPick }) {
+  if (!counterAnalysis || counterAnalysis.length === 0) return null
+
+  return (
+    <div className="counter-section">
+      <div className="section-title counter-title">
+        ⚔ Counters aos picks inimigos
+      </div>
+      {counterAnalysis.map(({ vs, best_picks }) => (
+        <div key={vs} className="counter-row">
+          <div className="counter-header">
+            <span className="counter-vs-label">vs</span>
+            <span className="counter-enemy">{vs}</span>
+            <span className="counter-sub">— picks recomendados</span>
+          </div>
+          <div className="counter-picks">
+            {best_picks.map(p => (
+              <MiniChamp
+                key={p.champion}
+                champion={p.champion}
+                winProb={p.win_probability}
+                delta={p.delta}
+                onClick={onPick}
+              />
+            ))}
+          </div>
         </div>
       ))}
     </div>
   )
 }
 
+function getLaneIcon(lane) {
+  return { top: '🗡', jng: '🌲', mid: '⚡', bot: '🏹', sup: '🛡' }[lane] ?? '⚔'
+}
+
 export default function SuggestionPanel({
-  winProbability,
-  suggestions,
-  loading,
-  mySide,
-  alliedPicks,
-  enemyPicks,
-  onPickSuggestion,
+  winProbability, suggestions, byLane, counterAnalysis,
+  loading, mySide, alliedPicks, enemyPicks, activeSlot, onPickSuggestion,
 }) {
-  const hasSuggestions = suggestions && suggestions.length > 0
-  const showProb = winProbability !== null && winProbability !== undefined
+  const hasData      = alliedPicks.filter(Boolean).length > 0
+  const hasLanes     = byLane && Object.values(byLane).some(arr => arr?.length > 0)
+  const hasCounters  = counterAnalysis?.length > 0
 
   return (
     <div className="suggestion-panel">
-      {/* Win probability bar */}
-      <div className="panel-section">
-        <WinBar probability={showProb ? winProbability : 0.5} mySide={mySide} />
+      {/* Win probability */}
+      <div className="panel-top">
+        <WinBar probability={hasData ? winProbability : null} mySide={mySide} />
+        {loading && <span className="loading-badge">calculando...</span>}
       </div>
 
-      <div className="panel-body">
-        {/* Sugestões */}
-        <div className="panel-section suggestions-section">
-          <div className="section-title">
-            Picks Recomendados
-            {loading && <span className="loading-dot"> ·</span>}
+      {!hasData && (
+        <div className="panel-idle">
+          <div className="idle-icon">⚔</div>
+          <p>Selecione um pick aliado para ver as recomendações por lane e análise de counters.</p>
+        </div>
+      )}
+
+      {hasData && (
+        <div className="panel-body">
+          {/* Lane suggestions */}
+          <div className="panel-col">
+            <div className="section-title">Sugestões por Lane</div>
+            {hasLanes
+              ? <LaneSuggestions byLane={byLane} activeSlot={activeSlot} onPick={onPickSuggestion} />
+              : <div className="empty-msg">Aguardando dados...</div>
+            }
           </div>
 
-          {!hasSuggestions && !loading && (
-            <div className="empty-msg">Selecione picks para ver sugestões</div>
-          )}
-
-          {hasSuggestions && (
-            <div className="suggestions-list">
-              {suggestions.slice(0, 8).map((s, i) => (
-                <SuggestionRow
-                  key={s.champion}
-                  rank={i + 1}
-                  data={s}
-                  onClick={onPickSuggestion}
-                />
-              ))}
-            </div>
-          )}
+          {/* Counter analysis */}
+          <div className="panel-col">
+            {hasCounters
+              ? <CounterAnalysis counterAnalysis={counterAnalysis} onPick={onPickSuggestion} />
+              : (
+                <div className="counter-placeholder">
+                  <div className="section-title">⚔ Counters aos picks inimigos</div>
+                  <div className="empty-msg">Adicione picks inimigos para ver counters específicos.</div>
+                </div>
+              )
+            }
+          </div>
         </div>
-
-        {/* Dicas contextuais */}
-        <div className="panel-section tips-section">
-          <div className="section-title">Análise da Composição</div>
-          <CompTips alliedPicks={alliedPicks} enemyPicks={enemyPicks} />
-        </div>
-      </div>
+      )}
     </div>
   )
 }

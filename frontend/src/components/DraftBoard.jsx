@@ -1,165 +1,237 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import TeamSide from './TeamSide'
 import ChampionPool from './ChampionPool'
 import SuggestionPanel from './SuggestionPanel'
 import './DraftBoard.css'
 
+// Ordem oficial do draft competitivo do LoL (20 passos)
+const DRAFT_ORDER = [
+  // Ban Phase 1 — alternando azul/vermelho
+  { step: 1,  phase: 'Banimentos — Fase 1', side: 'blue', type: 'ban',  index: 0 },
+  { step: 2,  phase: 'Banimentos — Fase 1', side: 'red',  type: 'ban',  index: 0 },
+  { step: 3,  phase: 'Banimentos — Fase 1', side: 'blue', type: 'ban',  index: 1 },
+  { step: 4,  phase: 'Banimentos — Fase 1', side: 'red',  type: 'ban',  index: 1 },
+  { step: 5,  phase: 'Banimentos — Fase 1', side: 'blue', type: 'ban',  index: 2 },
+  { step: 6,  phase: 'Banimentos — Fase 1', side: 'red',  type: 'ban',  index: 2 },
+  // Pick Phase 1
+  { step: 7,  phase: 'Picks — Fase 1', side: 'blue', type: 'pick', index: 0, position: 'top' },
+  { step: 8,  phase: 'Picks — Fase 1', side: 'red',  type: 'pick', index: 0, position: 'top' },
+  { step: 9,  phase: 'Picks — Fase 1', side: 'red',  type: 'pick', index: 1, position: 'jng' },
+  { step: 10, phase: 'Picks — Fase 1', side: 'blue', type: 'pick', index: 1, position: 'jng' },
+  { step: 11, phase: 'Picks — Fase 1', side: 'blue', type: 'pick', index: 2, position: 'mid' },
+  { step: 12, phase: 'Picks — Fase 1', side: 'red',  type: 'pick', index: 2, position: 'mid' },
+  // Ban Phase 2 — vermelho primeiro
+  { step: 13, phase: 'Banimentos — Fase 2', side: 'red',  type: 'ban',  index: 3 },
+  { step: 14, phase: 'Banimentos — Fase 2', side: 'blue', type: 'ban',  index: 3 },
+  { step: 15, phase: 'Banimentos — Fase 2', side: 'red',  type: 'ban',  index: 4 },
+  { step: 16, phase: 'Banimentos — Fase 2', side: 'blue', type: 'ban',  index: 4 },
+  // Pick Phase 2
+  { step: 17, phase: 'Picks — Fase 2', side: 'red',  type: 'pick', index: 3, position: 'bot' },
+  { step: 18, phase: 'Picks — Fase 2', side: 'blue', type: 'pick', index: 3, position: 'bot' },
+  { step: 19, phase: 'Picks — Fase 2', side: 'blue', type: 'pick', index: 4, position: 'sup' },
+  { step: 20, phase: 'Picks — Fase 2', side: 'red',  type: 'pick', index: 4, position: 'sup' },
+]
+
+const PHASE_COLORS = {
+  'Banimentos — Fase 1': '#7a1a1a',
+  'Picks — Fase 1':      '#1a4a7a',
+  'Banimentos — Fase 2': '#7a1a1a',
+  'Picks — Fase 2':      '#1a4a7a',
+}
+
 const EMPTY5 = () => Array(5).fill(null)
 
-export default function DraftBoard({ champions, mySide, league, patch }) {
-  const [bluePicks,  setBluePicks]  = useState(EMPTY5())
-  const [redPicks,   setRedPicks]   = useState(EMPTY5())
-  const [blueBans,   setBlueBans]   = useState(EMPTY5())
-  const [redBans,    setRedBans]    = useState(EMPTY5())
-  const [activeSlot, setActiveSlot] = useState(null) // { side, type, index }
+// Monta slot de pick order por { side, type, index }
+function buildSlotOrderMap() {
+  const map = {}
+  DRAFT_ORDER.forEach(d => {
+    const key = `${d.side}-${d.type}-${d.index}`
+    map[key] = d.step
+  })
+  return map
+}
+const SLOT_ORDER_MAP = buildSlotOrderMap()
 
-  const [suggestions,     setSuggestions]     = useState([])
-  const [winProbability,  setWinProbability]  = useState(null)
-  const [loading,         setLoading]         = useState(false)
+export default function DraftBoard({ champions, mySide, league, patch }) {
+  const [bluePicks, setBluePicks] = useState(EMPTY5())
+  const [redPicks,  setRedPicks]  = useState(EMPTY5())
+  const [blueBans,  setBlueBans]  = useState(EMPTY5())
+  const [redBans,   setRedBans]   = useState(EMPTY5())
+
+  const [draftStep,  setDraftStep]  = useState(0)  // 0-based index into DRAFT_ORDER
+  const [activeSlot, setActiveSlot] = useState(DRAFT_ORDER[0])  // follows draft order or manual click
+
+  const [suggestions,    setSuggestions]    = useState([])
+  const [byLane,         setByLane]         = useState({})
+  const [counterAnalysis, setCounterAnalysis] = useState([])
+  const [winProbability, setWinProbability] = useState(null)
+  const [loading,        setLoading]        = useState(false)
 
   const alliedPicks = mySide === 'blue' ? bluePicks : redPicks
   const enemyPicks  = mySide === 'blue' ? redPicks  : bluePicks
+  const usedChampions = [...bluePicks, ...redPicks, ...blueBans, ...redBans].filter(Boolean)
 
-  const usedChampions = [
-    ...bluePicks, ...redPicks, ...blueBans, ...redBans
-  ].filter(Boolean)
+  const currentDraftEntry = DRAFT_ORDER[draftStep] ?? null
+  const isDraftComplete   = draftStep >= DRAFT_ORDER.length
 
-  // Fetch suggestions whenever draft state changes
-  const fetchSuggestions = useCallback(async (bp, rp, bb, rb) => {
-    if (champions.length === 0) return
-    const allied = mySide === 'blue' ? bp : rp
-    const enemy  = mySide === 'blue' ? rp : bp
-    const bans   = [...bb, ...rb].filter(Boolean)
-
-    if (allied.filter(Boolean).length === 0) {
-      setSuggestions([])
-      setWinProbability(null)
-      return
+  // Advance draft step to next unfilled slot
+  const advanceDraftStep = useCallback((bp, rp, bb, rb, fromStep) => {
+    let next = fromStep
+    while (next < DRAFT_ORDER.length) {
+      const d = DRAFT_ORDER[next]
+      const arr = d.side === 'blue'
+        ? (d.type === 'pick' ? bp : bb)
+        : (d.type === 'pick' ? rp : rb)
+      if (!arr[d.index]) break
+      next++
     }
+    if (next < DRAFT_ORDER.length) {
+      setDraftStep(next)
+      setActiveSlot(DRAFT_ORDER[next])
+    } else {
+      setDraftStep(DRAFT_ORDER.length)
+      setActiveSlot(null)
+    }
+  }, [])
+
+  const fetchSuggestions = useCallback(async (bp, rp, bb, rb, slotEntry) => {
+    if (champions.length === 0) return
+    const allied = (mySide === 'blue' ? bp : rp).filter(Boolean)
+    const enemy  = (mySide === 'blue' ? rp : bp).filter(Boolean)
+    const bans   = [...bb, ...rb].filter(Boolean)
+    if (allied.length === 0) { setSuggestions([]); setByLane({}); setCounterAnalysis([]); setWinProbability(null); return }
 
     setLoading(true)
     try {
-      const available = champions.filter(
-        c => !bans.includes(c) && !bp.includes(c) && !rp.includes(c)
-      )
+      const available = champions.filter(c => !bans.includes(c) && !bp.includes(c) && !rp.includes(c))
       const res = await fetch('/suggest-ml', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          allied_picks:        allied.filter(Boolean),
-          enemy_picks:         enemy.filter(Boolean),
+          allied_picks:        allied,
+          enemy_picks:         enemy,
           banned:              bans,
           available_champions: available,
           side:                mySide,
           league:              league || null,
           patch_major:         patch  || null,
-          top_n:               8,
+          active_position:     slotEntry?.position ?? null,
+          top_n:               15,
         }),
       })
-      if (!res.ok) throw new Error('ML não disponível')
+      if (!res.ok) throw new Error()
       const data = await res.json()
       setSuggestions(data.suggestions || [])
+      setByLane(data.by_lane || {})
+      setCounterAnalysis(data.counter_analysis || [])
       setWinProbability(data.current_win_probability ?? null)
     } catch {
-      setSuggestions([])
-      setWinProbability(null)
+      setSuggestions([]); setByLane({}); setCounterAnalysis([]); setWinProbability(null)
     } finally {
       setLoading(false)
     }
   }, [champions, mySide, league, patch])
 
-  // Re-fetch when filters change
   useEffect(() => {
-    fetchSuggestions(bluePicks, redPicks, blueBans, redBans)
+    fetchSuggestions(bluePicks, redPicks, blueBans, redBans, activeSlot)
   }, [league, patch, mySide])
 
   const selectChampion = useCallback((champion) => {
     if (!activeSlot) return
     const { side, type, index } = activeSlot
 
-    const setter = side === 'blue'
-      ? (type === 'pick' ? setBluePicks : setBlueBans)
-      : (type === 'pick' ? setRedPicks  : setRedBans)
+    const update = (prev) => { const n = [...prev]; n[index] = champion; return n }
 
-    setter(prev => {
-      const next = [...prev]
-      next[index] = champion
-      // trigger fetch with updated state
-      const bp = side === 'blue' && type === 'pick' ? next : bluePicks
-      const rp = side === 'red' && type === 'pick' ? next : redPicks
-      const bb = side === 'blue' && type === 'ban'  ? next : blueBans
-      const rb = side === 'red' && type === 'ban'   ? next : redBans
-      setTimeout(() => fetchSuggestions(bp, rp, bb, rb), 0)
-      return next
-    })
+    let bp = bluePicks, rp = redPicks, bb = blueBans, rb = redBans
+    if (side === 'blue' && type === 'pick') { bp = update(bluePicks); setBluePicks(bp) }
+    else if (side === 'red'  && type === 'pick') { rp = update(redPicks);  setRedPicks(rp)  }
+    else if (side === 'blue' && type === 'ban')  { bb = update(blueBans);  setBlueBans(bb)  }
+    else if (side === 'red'  && type === 'ban')  { rb = update(redBans);   setRedBans(rb)   }
 
-    // advance to next empty slot automatically
-    setActiveSlot(prev => {
-      if (!prev) return null
-      const arr = type === 'pick'
-        ? (side === 'blue' ? bluePicks : redPicks)
-        : (side === 'blue' ? blueBans  : redBans)
-      const nextIdx = arr.findIndex((v, i) => i > index && !v)
-      if (nextIdx === -1) return null
-      return { side, type, index: nextIdx }
-    })
-  }, [activeSlot, bluePicks, redPicks, blueBans, redBans, fetchSuggestions])
+    const nextStep = DRAFT_ORDER.findIndex((d, i) =>
+      i > draftStep &&
+      !(d.side === 'blue' && d.type === 'pick' ? bp : d.side === 'red' && d.type === 'pick' ? rp : d.side === 'blue' ? bb : rb)[d.index]
+    )
+    const next = nextStep === -1 ? DRAFT_ORDER.length : nextStep
+    const nextEntry = DRAFT_ORDER[next] ?? null
+    setDraftStep(next)
+    setActiveSlot(nextEntry)
+    fetchSuggestions(bp, rp, bb, rb, nextEntry)
+  }, [activeSlot, draftStep, bluePicks, redPicks, blueBans, redBans, fetchSuggestions])
 
   const removeChampion = useCallback((side, type, index) => {
-    const setter = side === 'blue'
-      ? (type === 'pick' ? setBluePicks : setBlueBans)
-      : (type === 'pick' ? setRedPicks  : setRedBans)
-
-    setter(prev => {
-      const next = [...prev]
-      next[index] = null
-      const bp = side === 'blue' && type === 'pick' ? next : bluePicks
-      const rp = side === 'red' && type === 'pick' ? next : redPicks
-      const bb = side === 'blue' && type === 'ban'  ? next : blueBans
-      const rb = side === 'red' && type === 'ban'   ? next : redBans
-      setTimeout(() => fetchSuggestions(bp, rp, bb, rb), 0)
-      return next
-    })
-  }, [bluePicks, redPicks, blueBans, redBans, fetchSuggestions])
+    const update = (prev) => { const n = [...prev]; n[index] = null; return n }
+    let bp = bluePicks, rp = redPicks, bb = blueBans, rb = redBans
+    if (side === 'blue' && type === 'pick') { bp = update(bluePicks); setBluePicks(bp) }
+    else if (side === 'red'  && type === 'pick') { rp = update(redPicks);  setRedPicks(rp)  }
+    else if (side === 'blue' && type === 'ban')  { bb = update(blueBans);  setBlueBans(bb)  }
+    else if (side === 'red'  && type === 'ban')  { rb = update(redBans);   setRedBans(rb)   }
+    advanceDraftStep(bp, rp, bb, rb, 0)
+    fetchSuggestions(bp, rp, bb, rb, DRAFT_ORDER[0])
+  }, [bluePicks, redPicks, blueBans, redBans, advanceDraftStep, fetchSuggestions])
 
   const handleSlotClick = useCallback((side, type, index) => {
+    const clicked = DRAFT_ORDER.find(d => d.side === side && d.type === type && d.index === index)
     setActiveSlot(prev =>
-      prev?.side === side && prev?.type === type && prev?.index === index
-        ? null
-        : { side, type, index }
+      prev?.side === side && prev?.type === type && prev?.index === index ? null : (clicked ?? { side, type, index })
     )
   }, [])
 
-  // Pick suggestion directly into next available allied slot
   const handlePickSuggestion = useCallback((champion) => {
-    const picks = mySide === 'blue' ? bluePicks : redPicks
-    const nextIdx = picks.findIndex(v => !v)
-    if (nextIdx === -1) return
-    setActiveSlot({ side: mySide, type: 'pick', index: nextIdx })
+    if (!activeSlot || activeSlot.type !== 'pick' || activeSlot.side !== mySide) {
+      const nextMySlot = DRAFT_ORDER.find(d =>
+        d.side === mySide && d.type === 'pick' &&
+        !(mySide === 'blue' ? bluePicks : redPicks)[d.index]
+      )
+      if (nextMySlot) setActiveSlot(nextMySlot)
+    }
     setTimeout(() => selectChampion(champion), 0)
-  }, [mySide, bluePicks, redPicks, selectChampion])
+  }, [activeSlot, mySide, bluePicks, redPicks, selectChampion])
 
   const resetDraft = () => {
     setBluePicks(EMPTY5()); setRedPicks(EMPTY5())
     setBlueBans(EMPTY5());  setRedBans(EMPTY5())
-    setActiveSlot(null); setSuggestions([]); setWinProbability(null)
+    setDraftStep(0); setActiveSlot(DRAFT_ORDER[0])
+    setSuggestions([]); setByLane({}); setCounterAnalysis([]); setWinProbability(null)
   }
+
+  const currentPhase = currentDraftEntry?.phase ?? (isDraftComplete ? 'Draft Completo' : '')
+  const phaseColor   = PHASE_COLORS[currentPhase] ?? '#1e2d40'
 
   return (
     <div className="draft-root">
+      {/* Phase indicator */}
+      <div className="phase-bar" style={{ borderColor: phaseColor }}>
+        <div className="phase-steps">
+          {DRAFT_ORDER.map((d, i) => (
+            <div
+              key={i}
+              className={`phase-dot ${d.type} ${d.side} ${i === draftStep ? 'current' : ''} ${i < draftStep ? 'done' : ''}`}
+              title={`${d.step}. ${d.side === 'blue' ? 'Azul' : 'Vermelho'} — ${d.type === 'ban' ? 'Ban' : 'Pick'}`}
+            />
+          ))}
+        </div>
+        <span className="phase-label" style={{ color: phaseColor === '#1e2d40' ? '#785a28' : phaseColor }}>
+          {isDraftComplete
+            ? '✓ Draft Completo'
+            : `Passo ${(currentDraftEntry?.step ?? '—')} — ${currentPhase} — ${currentDraftEntry?.side === 'blue' ? 'Time Azul' : 'Time Vermelho'}`
+          }
+        </span>
+      </div>
+
       <div className="draft-main">
-        {/* Blue Side */}
         <TeamSide
           side="blue"
           isMySide={mySide === 'blue'}
           picks={bluePicks}
           bans={blueBans}
           activeSlot={activeSlot?.side === 'blue' ? activeSlot : null}
+          currentDraftSlot={currentDraftEntry?.side === 'blue' ? currentDraftEntry : null}
+          slotOrderMap={SLOT_ORDER_MAP}
           onSlotClick={(type, index) => handleSlotClick('blue', type, index)}
           onRemove={(type, index) => removeChampion('blue', type, index)}
         />
 
-        {/* Champion Pool */}
         <div className="pool-wrap">
           <ChampionPool
             champions={champions}
@@ -170,26 +242,29 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
           <button className="reset-btn" onClick={resetDraft}>Resetar Draft</button>
         </div>
 
-        {/* Red Side */}
         <TeamSide
           side="red"
           isMySide={mySide === 'red'}
           picks={redPicks}
           bans={redBans}
           activeSlot={activeSlot?.side === 'red' ? activeSlot : null}
+          currentDraftSlot={currentDraftEntry?.side === 'red' ? currentDraftEntry : null}
+          slotOrderMap={SLOT_ORDER_MAP}
           onSlotClick={(type, index) => handleSlotClick('red', type, index)}
           onRemove={(type, index) => removeChampion('red', type, index)}
         />
       </div>
 
-      {/* Suggestions Panel */}
       <SuggestionPanel
         winProbability={winProbability}
         suggestions={suggestions}
+        byLane={byLane}
+        counterAnalysis={counterAnalysis}
         loading={loading}
         mySide={mySide}
         alliedPicks={alliedPicks}
         enemyPicks={enemyPicks}
+        activeSlot={activeSlot}
         onPickSuggestion={handlePickSuggestion}
       />
     </div>

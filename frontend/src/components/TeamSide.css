@@ -169,6 +169,34 @@
   color: #1e2d40;
 }
 
+/* ── Draft order numbers ────────────────────────────────── */
+.slot-order-num {
+  position: absolute;
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #2a3a4c;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.ban-slot .slot-order-num  { top: 3px; left: 4px; }
+.pick-order                { top: 4px; left: 6px; color: #2a3a4c; }
+.pick-order.order-current  { color: #c8aa6e; }
+
+/* ── Draft current (next in order) ─────────────────────── */
+.draft-current {
+  animation: draft-pulse 1.2s ease-in-out infinite;
+}
+
+.draft-current.blue { border-color: #4a9fdc !important; }
+.draft-current.red  { border-color: #e84057 !important; }
+.ban-slot.draft-current { border-color: #c8aa6e !important; border-style: solid !important; }
+
+@keyframes draft-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50%       { box-shadow: 0 0 0 4px rgba(200, 170, 110, 0.2); }
+}
+
 .remove-btn {
   position: absolute;
   right: 6px;
