@@ -1,0 +1,188 @@
+.team-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.team-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #1e2d40;
+}
+
+.team-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.blue-label { color: #4a9fdc; }
+.red-label  { color: #e84057; }
+
+.my-team-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #c8aa6e22;
+  color: #c8aa6e;
+  border: 1px solid #c8aa6e44;
+}
+
+/* ── Bans ──────────────────────────────────────────────── */
+.bans-row {
+  display: flex;
+  gap: 6px;
+}
+
+.ban-slot {
+  flex: 1;
+  height: 34px;
+  border: 1px dashed #1e2d40;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  background: #050d17;
+  transition: border-color 0.15s;
+  overflow: hidden;
+}
+
+.ban-slot:hover       { border-color: #3a4a5c; }
+.ban-slot.active      { border-color: #c8aa6e; border-style: solid; box-shadow: 0 0 8px #c8aa6e33; }
+.ban-slot.filled      { background: #0a1520; border-style: solid; border-color: #3d1a1a; }
+
+.ban-name {
+  font-size: 0.65rem;
+  color: #785a28;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ban-empty {
+  font-size: 0.6rem;
+  color: #1e2d40;
+  text-transform: uppercase;
+}
+
+/* ── Picks ──────────────────────────────────────────────── */
+.picks-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pick-slot {
+  height: 64px;
+  border: 1px solid #1e2d40;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  cursor: pointer;
+  background: #050d17;
+  position: relative;
+  transition: all 0.15s;
+  overflow: hidden;
+}
+
+.pick-slot::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+
+.pick-slot.blue::before { background: #1a4a7a; }
+.pick-slot.red::before  { background: #7a1a1a; }
+
+.pick-slot:hover         { border-color: #2a3a4c; background: #071018; }
+.pick-slot.active        { border-color: #c8aa6e; box-shadow: 0 0 10px #c8aa6e22; }
+.pick-slot.filled        { background: #091528; }
+.pick-slot.filled.blue   { border-color: #1e3f6e; }
+.pick-slot.filled.red    { border-color: #6e1e1e; }
+
+.champ-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.champ-avatar.blue { background: #0f3460; color: #7ec8e3; border: 2px solid #1e5a9a; }
+.champ-avatar.red  { background: #3d0c11; color: #ff8a9a; border: 2px solid #7a1e2a; }
+
+.pick-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.pick-champ {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #c8aa6e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pick-pos {
+  font-size: 0.65rem;
+  color: #785a28;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pick-empty-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.pick-empty-avatar.blue { background: #0a1e33; color: #1e3f6e; border: 2px dashed #1e3f6e; }
+.pick-empty-avatar.red  { background: #1a0a0a; color: #6e1e1e; border: 2px dashed #6e1e1e; }
+
+.pick-empty-label {
+  font-size: 0.72rem;
+  color: #1e2d40;
+}
+
+.remove-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #3a4a5c;
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: color 0.1s;
+}
+
+.remove-btn:hover { color: #c8aa6e; }

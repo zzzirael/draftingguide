@@ -1,10 +1,12 @@
 import sqlite3
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 
-from engine.scorer import suggest_picks, DraftState
+from engine.scorer import suggest_picks, DraftState as ScorerState
+from engine.predictor import get_predictor, DraftState as PredictorState
 
 app = FastAPI(title="LoL Competitive Draft Simulator")
 
@@ -18,31 +20,29 @@ app.add_middleware(
 DB_PATH = "data/lol.db"
 
 
+# ── Schemas ──────────────────────────────────────────────────────────────────
+
 class DraftRequest(BaseModel):
     allied_picks:        list[str] = []
     enemy_picks:         list[str] = []
     banned:              list[str] = []
-    available_champions: list[str]
+    available_champions: list[str] = []
+    side:                str = 'blue'
     league:              Optional[str] = None
     patch_major:         Optional[str] = None
-    is_playoffs:         Optional[bool] = None
-    top_n:               int = 5
+    is_playoffs:         bool = False
+    top_n:               int = 10
 
 
-@app.post("/suggest")
-def suggest(req: DraftRequest):
-    state = DraftState(
-        allied_picks=req.allied_picks,
-        enemy_picks=req.enemy_picks,
-        banned=req.banned,
-        league=req.league,
-        patch_major=req.patch_major,
-        is_playoffs=req.is_playoffs,
-    )
-    suggestions = suggest_picks(
-        req.available_champions, state, DB_PATH, top_n=req.top_n
-    )
-    return {"suggestions": suggestions}
+# ── Endpoints básicos ─────────────────────────────────────────────────────────
+
+@app.get("/health")
+def health():
+    predictor = get_predictor()
+    return {
+        "status": "ok",
+        "ml_model_loaded": predictor is not None,
+    }
 
 
 @app.get("/leagues")
@@ -87,35 +87,103 @@ def champion_stats(champion: str, league: Optional[str] = None, patch_major: Opt
     try:
         conn = sqlite3.connect(DB_PATH)
         clauses = ["champion = ?"]
-        params = [champion]
+        params  = [champion]
         if league:
-            clauses.append("league = ?")
-            params.append(league)
+            clauses.append("league = ?"); params.append(league)
         if patch_major:
-            clauses.append("patch_major = ?")
-            params.append(patch_major)
+            clauses.append("patch_major = ?"); params.append(patch_major)
         where = " AND ".join(clauses)
-
         row = conn.execute(
-            f"SELECT SUM(wins), SUM(games) FROM counter_matrix WHERE {where}",
-            params
+            f"SELECT SUM(wins), SUM(games) FROM counter_matrix WHERE {where}", params
         ).fetchone()
         conn.close()
-
-        total_wins = row[0] or 0
+        total_wins  = row[0] or 0
         total_games = row[1] or 0
-        winrate = round(total_wins / total_games, 4) if total_games else None
-
         return {
             "champion": champion,
-            "games": total_games,
-            "wins": total_wins,
-            "winrate": winrate,
+            "games":    total_games,
+            "wins":     total_wins,
+            "winrate":  round(total_wins / total_games, 4) if total_games else None,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+# ── Endpoint legado (scorer heurístico) ──────────────────────────────────────
+
+@app.post("/suggest")
+def suggest(req: DraftRequest):
+    state = ScorerState(
+        allied_picks=req.allied_picks,
+        enemy_picks=req.enemy_picks,
+        banned=req.banned,
+        league=req.league,
+        patch_major=req.patch_major,
+    )
+    available = req.available_champions or _all_champions()
+    suggestions = suggest_picks(available, state, DB_PATH, top_n=req.top_n)
+    return {"suggestions": suggestions}
+
+
+# ── Endpoint ML ───────────────────────────────────────────────────────────────
+
+@app.post("/suggest-ml")
+def suggest_ml(req: DraftRequest):
+    predictor = get_predictor()
+    if predictor is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Modelo ML não encontrado. Execute python setup.py primeiro."
+        )
+
+    state = PredictorState(
+        allied_picks=req.allied_picks,
+        enemy_picks=req.enemy_picks,
+        banned=req.banned,
+        side=req.side,
+        league=req.league,
+        patch_major=req.patch_major,
+        is_playoffs=req.is_playoffs,
+    )
+
+    available = req.available_champions or _all_champions()
+    current_prob  = predictor.predict_win_probability(state)
+    suggestions   = predictor.suggest_picks(available, state, top_n=req.top_n)
+
+    return {
+        "current_win_probability": current_prob,
+        "suggestions": suggestions,
+    }
+
+
+@app.post("/win-probability")
+def win_probability(req: DraftRequest):
+    predictor = get_predictor()
+    if predictor is None:
+        raise HTTPException(status_code=503, detail="Modelo ML não carregado.")
+
+    state = PredictorState(
+        allied_picks=req.allied_picks,
+        enemy_picks=req.enemy_picks,
+        banned=req.banned,
+        side=req.side,
+        league=req.league,
+        patch_major=req.patch_major,
+        is_playoffs=req.is_playoffs,
+    )
+    prob = predictor.predict_win_probability(state)
+    return {"win_probability": prob, "loss_probability": round(1 - prob, 4)}
+
+
+# ── helpers ───────────────────────────────────────────────────────────────────
+
+def _all_champions() -> list[str]:
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        rows = conn.execute(
+            "SELECT DISTINCT champion FROM match_picks WHERE champion IS NOT NULL"
+        ).fetchall()
+        conn.close()
+        return [r[0] for r in rows]
+    except Exception:
+        return []

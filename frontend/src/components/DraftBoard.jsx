@@ -1,155 +1,197 @@
-import { useState } from 'react'
-import ChampionGrid from './ChampionGrid'
-import SuggestionCard from './SuggestionCard'
+import { useState, useCallback, useEffect } from 'react'
+import TeamSide from './TeamSide'
+import ChampionPool from './ChampionPool'
+import SuggestionPanel from './SuggestionPanel'
 import './DraftBoard.css'
 
-const POSITIONS = ['top', 'jng', 'mid', 'bot', 'sup']
+const EMPTY5 = () => Array(5).fill(null)
 
-export default function DraftBoard({ champions, league, patch }) {
-  const [alliedPicks, setAlliedPicks] = useState([])
-  const [enemyPicks, setEnemyPicks] = useState([])
-  const [banned, setBanned] = useState([])
-  const [suggestions, setSuggestions] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [activeSlot, setActiveSlot] = useState(null) // { team: 'ally'|'enemy'|'ban', index }
-  const [search, setSearch] = useState('')
+export default function DraftBoard({ champions, mySide, league, patch }) {
+  const [bluePicks,  setBluePicks]  = useState(EMPTY5())
+  const [redPicks,   setRedPicks]   = useState(EMPTY5())
+  const [blueBans,   setBlueBans]   = useState(EMPTY5())
+  const [redBans,    setRedBans]    = useState(EMPTY5())
+  const [activeSlot, setActiveSlot] = useState(null) // { side, type, index }
 
-  const usedChampions = [...alliedPicks, ...enemyPicks, ...banned]
-  const filteredChampions = champions.filter(c =>
-    !usedChampions.includes(c) &&
-    c.toLowerCase().includes(search.toLowerCase())
-  )
+  const [suggestions,     setSuggestions]     = useState([])
+  const [winProbability,  setWinProbability]  = useState(null)
+  const [loading,         setLoading]         = useState(false)
 
-  const fetchSuggestions = async (allied, enemy, bans) => {
+  const alliedPicks = mySide === 'blue' ? bluePicks : redPicks
+  const enemyPicks  = mySide === 'blue' ? redPicks  : bluePicks
+
+  const usedChampions = [
+    ...bluePicks, ...redPicks, ...blueBans, ...redBans
+  ].filter(Boolean)
+
+  // Fetch suggestions whenever draft state changes
+  const fetchSuggestions = useCallback(async (bp, rp, bb, rb) => {
     if (champions.length === 0) return
+    const allied = mySide === 'blue' ? bp : rp
+    const enemy  = mySide === 'blue' ? rp : bp
+    const bans   = [...bb, ...rb].filter(Boolean)
+
+    if (allied.filter(Boolean).length === 0) {
+      setSuggestions([])
+      setWinProbability(null)
+      return
+    }
+
     setLoading(true)
     try {
-      const available = champions.filter(c => !bans.includes(c) && !allied.includes(c) && !enemy.includes(c))
-      const res = await fetch('/suggest', {
+      const available = champions.filter(
+        c => !bans.includes(c) && !bp.includes(c) && !rp.includes(c)
+      )
+      const res = await fetch('/suggest-ml', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          allied_picks: allied,
-          enemy_picks: enemy,
-          banned: bans,
+          allied_picks:        allied.filter(Boolean),
+          enemy_picks:         enemy.filter(Boolean),
+          banned:              bans,
           available_champions: available,
-          league: league || null,
-          patch_major: patch || null,
-          top_n: 10,
-        })
+          side:                mySide,
+          league:              league || null,
+          patch_major:         patch  || null,
+          top_n:               8,
+        }),
       })
+      if (!res.ok) throw new Error('ML não disponível')
       const data = await res.json()
       setSuggestions(data.suggestions || [])
+      setWinProbability(data.current_win_probability ?? null)
     } catch {
       setSuggestions([])
+      setWinProbability(null)
     } finally {
       setLoading(false)
     }
-  }
+  }, [champions, mySide, league, patch])
 
-  const selectChampion = (champion) => {
+  // Re-fetch when filters change
+  useEffect(() => {
+    fetchSuggestions(bluePicks, redPicks, blueBans, redBans)
+  }, [league, patch, mySide])
+
+  const selectChampion = useCallback((champion) => {
     if (!activeSlot) return
-    const { team, index } = activeSlot
+    const { side, type, index } = activeSlot
 
-    let newAllied = [...alliedPicks]
-    let newEnemy = [...enemyPicks]
-    let newBanned = [...banned]
+    const setter = side === 'blue'
+      ? (type === 'pick' ? setBluePicks : setBlueBans)
+      : (type === 'pick' ? setRedPicks  : setRedBans)
 
-    if (team === 'ally') {
-      newAllied[index] = champion
-      setAlliedPicks(newAllied)
-    } else if (team === 'enemy') {
-      newEnemy[index] = champion
-      setEnemyPicks(newEnemy)
-    } else if (team === 'ban') {
-      newBanned[index] = champion
-      setBanned(newBanned)
-    }
+    setter(prev => {
+      const next = [...prev]
+      next[index] = champion
+      // trigger fetch with updated state
+      const bp = side === 'blue' && type === 'pick' ? next : bluePicks
+      const rp = side === 'red' && type === 'pick' ? next : redPicks
+      const bb = side === 'blue' && type === 'ban'  ? next : blueBans
+      const rb = side === 'red' && type === 'ban'   ? next : redBans
+      setTimeout(() => fetchSuggestions(bp, rp, bb, rb), 0)
+      return next
+    })
 
-    setActiveSlot(null)
-    setSearch('')
-    fetchSuggestions(
-      team === 'ally' ? newAllied.filter(Boolean) : alliedPicks.filter(Boolean),
-      team === 'enemy' ? newEnemy.filter(Boolean) : enemyPicks.filter(Boolean),
-      team === 'ban' ? newBanned.filter(Boolean) : banned.filter(Boolean),
+    // advance to next empty slot automatically
+    setActiveSlot(prev => {
+      if (!prev) return null
+      const arr = type === 'pick'
+        ? (side === 'blue' ? bluePicks : redPicks)
+        : (side === 'blue' ? blueBans  : redBans)
+      const nextIdx = arr.findIndex((v, i) => i > index && !v)
+      if (nextIdx === -1) return null
+      return { side, type, index: nextIdx }
+    })
+  }, [activeSlot, bluePicks, redPicks, blueBans, redBans, fetchSuggestions])
+
+  const removeChampion = useCallback((side, type, index) => {
+    const setter = side === 'blue'
+      ? (type === 'pick' ? setBluePicks : setBlueBans)
+      : (type === 'pick' ? setRedPicks  : setRedBans)
+
+    setter(prev => {
+      const next = [...prev]
+      next[index] = null
+      const bp = side === 'blue' && type === 'pick' ? next : bluePicks
+      const rp = side === 'red' && type === 'pick' ? next : redPicks
+      const bb = side === 'blue' && type === 'ban'  ? next : blueBans
+      const rb = side === 'red' && type === 'ban'   ? next : redBans
+      setTimeout(() => fetchSuggestions(bp, rp, bb, rb), 0)
+      return next
+    })
+  }, [bluePicks, redPicks, blueBans, redBans, fetchSuggestions])
+
+  const handleSlotClick = useCallback((side, type, index) => {
+    setActiveSlot(prev =>
+      prev?.side === side && prev?.type === type && prev?.index === index
+        ? null
+        : { side, type, index }
     )
+  }, [])
+
+  // Pick suggestion directly into next available allied slot
+  const handlePickSuggestion = useCallback((champion) => {
+    const picks = mySide === 'blue' ? bluePicks : redPicks
+    const nextIdx = picks.findIndex(v => !v)
+    if (nextIdx === -1) return
+    setActiveSlot({ side: mySide, type: 'pick', index: nextIdx })
+    setTimeout(() => selectChampion(champion), 0)
+  }, [mySide, bluePicks, redPicks, selectChampion])
+
+  const resetDraft = () => {
+    setBluePicks(EMPTY5()); setRedPicks(EMPTY5())
+    setBlueBans(EMPTY5());  setRedBans(EMPTY5())
+    setActiveSlot(null); setSuggestions([]); setWinProbability(null)
   }
-
-  const removeChampion = (team, index) => {
-    if (team === 'ally') {
-      const next = [...alliedPicks]
-      next.splice(index, 1)
-      setAlliedPicks(next)
-      fetchSuggestions(next.filter(Boolean), enemyPicks.filter(Boolean), banned.filter(Boolean))
-    } else if (team === 'enemy') {
-      const next = [...enemyPicks]
-      next.splice(index, 1)
-      setEnemyPicks(next)
-      fetchSuggestions(alliedPicks.filter(Boolean), next.filter(Boolean), banned.filter(Boolean))
-    } else {
-      const next = [...banned]
-      next.splice(index, 1)
-      setBanned(next)
-      fetchSuggestions(alliedPicks.filter(Boolean), enemyPicks.filter(Boolean), next.filter(Boolean))
-    }
-  }
-
-  const isActive = (team, index) => activeSlot?.team === team && activeSlot?.index === index
-
-  const renderSlots = (team, picks, max, label) => (
-    <div className="slot-group">
-      <div className="slot-label">{label}</div>
-      <div className="slots">
-        {Array.from({ length: max }).map((_, i) => (
-          <div
-            key={i}
-            className={`slot ${isActive(team, i) ? 'slot-active' : ''} ${picks[i] ? 'slot-filled' : ''}`}
-            onClick={() => setActiveSlot({ team, index: i })}
-          >
-            {picks[i] ? (
-              <>
-                <span className="slot-champ">{picks[i]}</span>
-                <button className="slot-remove" onClick={e => { e.stopPropagation(); removeChampion(team, i) }}>×</button>
-              </>
-            ) : (
-              <span className="slot-empty">{team === 'ban' ? 'Ban' : POSITIONS[i] || '+'}</span>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
 
   return (
-    <div className="draft-board">
-      <div className="draft-left">
-        {renderSlots('ally', alliedPicks, 5, 'Time Aliado')}
-        {renderSlots('ban', banned, 10, 'Banimentos')}
-        {renderSlots('enemy', enemyPicks, 5, 'Time Inimigo')}
+    <div className="draft-root">
+      <div className="draft-main">
+        {/* Blue Side */}
+        <TeamSide
+          side="blue"
+          isMySide={mySide === 'blue'}
+          picks={bluePicks}
+          bans={blueBans}
+          activeSlot={activeSlot?.side === 'blue' ? activeSlot : null}
+          onSlotClick={(type, index) => handleSlotClick('blue', type, index)}
+          onRemove={(type, index) => removeChampion('blue', type, index)}
+        />
 
-        {activeSlot && (
-          <div className="champion-search">
-            <input
-              autoFocus
-              placeholder="Buscar campeão..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-            <ChampionGrid champions={filteredChampions} onSelect={selectChampion} />
-          </div>
-        )}
+        {/* Champion Pool */}
+        <div className="pool-wrap">
+          <ChampionPool
+            champions={champions}
+            usedChampions={usedChampions}
+            onSelect={selectChampion}
+            activeSlot={activeSlot}
+          />
+          <button className="reset-btn" onClick={resetDraft}>Resetar Draft</button>
+        </div>
+
+        {/* Red Side */}
+        <TeamSide
+          side="red"
+          isMySide={mySide === 'red'}
+          picks={redPicks}
+          bans={redBans}
+          activeSlot={activeSlot?.side === 'red' ? activeSlot : null}
+          onSlotClick={(type, index) => handleSlotClick('red', type, index)}
+          onRemove={(type, index) => removeChampion('red', type, index)}
+        />
       </div>
 
-      <div className="draft-right">
-        <h2>Sugestões</h2>
-        {loading && <div className="loading">Calculando...</div>}
-        {!loading && suggestions.length === 0 && (
-          <div className="empty-state">Selecione picks para ver sugestões</div>
-        )}
-        {suggestions.map((s, i) => (
-          <SuggestionCard key={s.champion} rank={i + 1} data={s} />
-        ))}
-      </div>
+      {/* Suggestions Panel */}
+      <SuggestionPanel
+        winProbability={winProbability}
+        suggestions={suggestions}
+        loading={loading}
+        mySide={mySide}
+        alliedPicks={alliedPicks}
+        enemyPicks={enemyPicks}
+        onPickSuggestion={handlePickSuggestion}
+      />
     </div>
   )
 }

@@ -1,52 +1,57 @@
 """
-Detecta o CSV em data/raw/, ingere e calcula as matrizes.
-Uso: python setup.py
+Detecta CSVs em data/raw/, ingere, calcula matrizes e treina o modelo ML.
+Uso: python setup.py [--skip-ingest] [--skip-train]
 """
-import os
-import sys
-import glob
+import os, sys, glob, argparse
 
-RAW_DIR = "data/raw"
-DB_PATH = "data/lol.db"
+RAW_DIR    = "data/raw"
+DB_PATH    = "data/lol.db"
+MODEL_PATH = "data/model.joblib"
 
 
-def find_csv():
-    csvs = glob.glob(os.path.join(RAW_DIR, "*.csv"))
+def find_csvs():
+    csvs = sorted(glob.glob(os.path.join(RAW_DIR, "*.csv")))
     if not csvs:
         print(f"Nenhum CSV encontrado em {RAW_DIR}/")
-        print("Baixe o arquivo em: https://oracleselixir.com/tools/downloads")
+        print("Baixe os arquivos em: https://oracleselixir.com/tools/downloads")
         print(f"E coloque em: {os.path.abspath(RAW_DIR)}/")
         sys.exit(1)
-    if len(csvs) > 1:
-        print("Múltiplos CSVs encontrados. Usando o mais recente:")
-        csvs.sort(key=os.path.getmtime, reverse=True)
-    chosen = csvs[0]
-    print(f"CSV encontrado: {chosen}")
-    return chosen
+    return csvs
 
 
 def main():
-    os.makedirs(RAW_DIR, exist_ok=True)
-    os.makedirs("data", exist_ok=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--skip-ingest', action='store_true')
+    parser.add_argument('--skip-train',  action='store_true')
+    parser.add_argument('--lambda-decay', type=float, default=0.3,
+                        help='Decaimento exponencial por patch (padrão 0.3)')
+    args = parser.parse_args()
 
-    csv_path = find_csv()
+    os.makedirs(RAW_DIR,  exist_ok=True)
+    os.makedirs("data",   exist_ok=True)
 
-    print("\n[1/3] Ingerindo dados no banco...")
-    from pipeline.ingest import load_oracleselixir
-    load_oracleselixir(csv_path, DB_PATH)
+    # ── Ingestão ──────────────────────────────────────────────────────────────
+    if not args.skip_ingest:
+        csvs = find_csvs()
+        from pipeline.ingest import load_oracleselixir
+        for csv_path in csvs:
+            print(f"\n[Ingestão] {csv_path}")
+            load_oracleselixir(csv_path, DB_PATH)
 
-    print("\n[2/3] Calculando matriz de sinergia...")
-    from pipeline.build_matrices import build_synergy_matrix
-    build_synergy_matrix(DB_PATH)
+        print("\n[Matrizes] Calculando sinergia e counter...")
+        from pipeline.build_matrices import build_synergy_matrix, build_counter_matrix
+        build_synergy_matrix(DB_PATH)
+        build_counter_matrix(DB_PATH)
 
-    print("\n[3/3] Calculando matriz de counter...")
-    from pipeline.build_matrices import build_counter_matrix
-    build_counter_matrix(DB_PATH)
+    # ── Treino ML ─────────────────────────────────────────────────────────────
+    if not args.skip_train:
+        print("\n[ML] Treinando modelo LightGBM com patch weighting...")
+        from pipeline.train_model import train
+        train(DB_PATH, lambda_decay=args.lambda_decay)
 
-    print("\nSetup concluído! Para subir a API:")
-    print("  uvicorn api.main:app --reload")
-    print("\nPara o frontend (em outro terminal):")
-    print("  cd frontend && npm install && npm run dev")
+    print("\nSetup concluido!")
+    print("  API:      uvicorn api.main:app --reload")
+    print("  Frontend: cd frontend && npm run dev")
 
 
 if __name__ == "__main__":

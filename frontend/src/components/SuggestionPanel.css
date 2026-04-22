@@ -1,0 +1,210 @@
+.suggestion-panel {
+  display: flex;
+  flex-direction: column;
+  background: #050d17;
+  border: 1px solid #1e2d40;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.panel-section {
+  padding: 14px 16px;
+  border-bottom: 1px solid #0d1928;
+}
+
+.panel-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+
+.panel-body .panel-section {
+  border-bottom: none;
+}
+
+.panel-body .panel-section:first-child {
+  border-right: 1px solid #0d1928;
+}
+
+.section-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #785a28;
+  margin-bottom: 10px;
+}
+
+.loading-dot {
+  color: #c8aa6e;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink { 0%,100% { opacity:1 } 50% { opacity:0 } }
+
+/* ── Win Bar ────────────────────────────────────────────── */
+.win-bar-wrap { display: flex; flex-direction: column; gap: 4px; }
+
+.win-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wbl-side {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.wbl-center {
+  font-size: 0.6rem;
+  color: #785a28;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.blue-text { color: #4a9fdc; }
+.red-text  { color: #e84057; }
+
+.win-bar {
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #0a1520;
+  display: flex;
+}
+
+.win-bar-blue {
+  height: 100%;
+  background: linear-gradient(90deg, #1a4a8a, #4a9fdc);
+  transition: width 0.5s ease;
+}
+
+.win-bar-red {
+  height: 100%;
+  background: linear-gradient(90deg, #e84057, #8a1a2a);
+  transition: width 0.5s ease;
+}
+
+.win-bar-pcts {
+  display: flex;
+  justify-content: space-between;
+}
+
+.win-bar-pcts span {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* ── Suggestions ─────────────────────────────────────────── */
+.suggestions-list { display: flex; flex-direction: column; gap: 4px; }
+
+.suggestion-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.suggestion-row:hover { background: #091528; }
+
+.sug-rank {
+  width: 20px;
+  font-size: 0.65rem;
+  color: #785a28;
+  flex-shrink: 0;
+}
+
+.sug-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #0f1f33;
+  border: 1px solid #1e3f6e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #4a9fdc;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.sug-name {
+  flex: 1;
+  font-size: 0.82rem;
+  color: #c8aa6e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sug-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.sug-bar {
+  flex: 1;
+  height: 4px;
+  background: #0a1520;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.sug-bar-fill {
+  height: 100%;
+  background: #4a9fdc;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.sug-pct {
+  font-size: 0.65rem;
+  color: #a0a8b8;
+  width: 28px;
+  text-align: right;
+}
+
+.sug-delta {
+  font-size: 0.65rem;
+  font-weight: 700;
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.delta-good    { color: #4caf50; }
+.delta-neutral { color: #a0a8b8; }
+.delta-bad     { color: #e84057; }
+
+.empty-msg {
+  font-size: 0.78rem;
+  color: #2a3a4c;
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* ── Tips ────────────────────────────────────────────────── */
+.comp-tips { display: flex; flex-direction: column; gap: 8px; }
+
+.tip-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.tip-icon { font-size: 0.85rem; flex-shrink: 0; line-height: 1.4; }
+
+.tip-text {
+  font-size: 0.78rem;
+  color: #a0a8b8;
+  line-height: 1.5;
+}
