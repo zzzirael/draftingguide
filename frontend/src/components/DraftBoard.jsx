@@ -1,35 +1,30 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import TeamSide from './TeamSide'
 import ChampionPool from './ChampionPool'
 import SuggestionPanel from './SuggestionPanel'
 import './DraftBoard.css'
 
-// Ordem oficial do draft competitivo do LoL (20 passos)
 const DRAFT_ORDER = [
-  // Ban Phase 1 — alternando azul/vermelho
   { step: 1,  phase: 'Banimentos — Fase 1', side: 'blue', type: 'ban',  index: 0 },
   { step: 2,  phase: 'Banimentos — Fase 1', side: 'red',  type: 'ban',  index: 0 },
   { step: 3,  phase: 'Banimentos — Fase 1', side: 'blue', type: 'ban',  index: 1 },
   { step: 4,  phase: 'Banimentos — Fase 1', side: 'red',  type: 'ban',  index: 1 },
   { step: 5,  phase: 'Banimentos — Fase 1', side: 'blue', type: 'ban',  index: 2 },
   { step: 6,  phase: 'Banimentos — Fase 1', side: 'red',  type: 'ban',  index: 2 },
-  // Pick Phase 1
-  { step: 7,  phase: 'Picks — Fase 1', side: 'blue', type: 'pick', index: 0, position: 'top' },
-  { step: 8,  phase: 'Picks — Fase 1', side: 'red',  type: 'pick', index: 0, position: 'top' },
-  { step: 9,  phase: 'Picks — Fase 1', side: 'red',  type: 'pick', index: 1, position: 'jng' },
-  { step: 10, phase: 'Picks — Fase 1', side: 'blue', type: 'pick', index: 1, position: 'jng' },
-  { step: 11, phase: 'Picks — Fase 1', side: 'blue', type: 'pick', index: 2, position: 'mid' },
-  { step: 12, phase: 'Picks — Fase 1', side: 'red',  type: 'pick', index: 2, position: 'mid' },
-  // Ban Phase 2 — vermelho primeiro
+  { step: 7,  phase: 'Picks — Fase 1', side: 'blue', type: 'pick', index: 0 },
+  { step: 8,  phase: 'Picks — Fase 1', side: 'red',  type: 'pick', index: 0 },
+  { step: 9,  phase: 'Picks — Fase 1', side: 'red',  type: 'pick', index: 1 },
+  { step: 10, phase: 'Picks — Fase 1', side: 'blue', type: 'pick', index: 1 },
+  { step: 11, phase: 'Picks — Fase 1', side: 'blue', type: 'pick', index: 2 },
+  { step: 12, phase: 'Picks — Fase 1', side: 'red',  type: 'pick', index: 2 },
   { step: 13, phase: 'Banimentos — Fase 2', side: 'red',  type: 'ban',  index: 3 },
   { step: 14, phase: 'Banimentos — Fase 2', side: 'blue', type: 'ban',  index: 3 },
   { step: 15, phase: 'Banimentos — Fase 2', side: 'red',  type: 'ban',  index: 4 },
   { step: 16, phase: 'Banimentos — Fase 2', side: 'blue', type: 'ban',  index: 4 },
-  // Pick Phase 2
-  { step: 17, phase: 'Picks — Fase 2', side: 'red',  type: 'pick', index: 3, position: 'bot' },
-  { step: 18, phase: 'Picks — Fase 2', side: 'blue', type: 'pick', index: 3, position: 'bot' },
-  { step: 19, phase: 'Picks — Fase 2', side: 'blue', type: 'pick', index: 4, position: 'sup' },
-  { step: 20, phase: 'Picks — Fase 2', side: 'red',  type: 'pick', index: 4, position: 'sup' },
+  { step: 17, phase: 'Picks — Fase 2', side: 'red',  type: 'pick', index: 3 },
+  { step: 18, phase: 'Picks — Fase 2', side: 'blue', type: 'pick', index: 3 },
+  { step: 19, phase: 'Picks — Fase 2', side: 'blue', type: 'pick', index: 4 },
+  { step: 20, phase: 'Picks — Fase 2', side: 'red',  type: 'pick', index: 4 },
 ]
 
 const PHASE_COLORS = {
@@ -39,15 +34,12 @@ const PHASE_COLORS = {
   'Picks — Fase 2':      '#1a4a7a',
 }
 
-const EMPTY5 = () => Array(5).fill(null)
+const EMPTY5      = () => Array(5).fill(null)
+const EMPTY_LANES = () => Array(5).fill('')
 
-// Monta slot de pick order por { side, type, index }
 function buildSlotOrderMap() {
   const map = {}
-  DRAFT_ORDER.forEach(d => {
-    const key = `${d.side}-${d.type}-${d.index}`
-    map[key] = d.step
-  })
+  DRAFT_ORDER.forEach(d => { map[`${d.side}-${d.type}-${d.index}`] = d.step })
   return map
 }
 const SLOT_ORDER_MAP = buildSlotOrderMap()
@@ -58,27 +50,30 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
   const [blueBans,  setBlueBans]  = useState(EMPTY5())
   const [redBans,   setRedBans]   = useState(EMPTY5())
 
-  const [draftStep,  setDraftStep]  = useState(0)  // 0-based index into DRAFT_ORDER
-  const [activeSlot, setActiveSlot] = useState(DRAFT_ORDER[0])  // follows draft order or manual click
+  const [bluePickLanes, setBluePickLanes] = useState(EMPTY_LANES())
+  const [redPickLanes,  setRedPickLanes]  = useState(EMPTY_LANES())
 
-  const [suggestions,    setSuggestions]    = useState([])
-  const [byLane,         setByLane]         = useState({})
+  const [draftStep,  setDraftStep]  = useState(0)
+  const [activeSlot, setActiveSlot] = useState(DRAFT_ORDER[0])
+
+  const [suggestions,     setSuggestions]     = useState([])
+  const [byLane,          setByLane]          = useState({})
   const [counterAnalysis, setCounterAnalysis] = useState([])
-  const [winProbability, setWinProbability] = useState(null)
-  const [loading,        setLoading]        = useState(false)
+  const [winProbability,  setWinProbability]  = useState(null)
+  const [loading,         setLoading]         = useState(false)
+  const [activePosition,  setActivePosition]  = useState(null)
 
-  const alliedPicks = mySide === 'blue' ? bluePicks : redPicks
-  const enemyPicks  = mySide === 'blue' ? redPicks  : bluePicks
+  const alliedPicks   = mySide === 'blue' ? bluePicks : redPicks
+  const enemyPicks    = mySide === 'blue' ? redPicks  : bluePicks
   const usedChampions = [...bluePicks, ...redPicks, ...blueBans, ...redBans].filter(Boolean)
 
   const currentDraftEntry = DRAFT_ORDER[draftStep] ?? null
   const isDraftComplete   = draftStep >= DRAFT_ORDER.length
 
-  // Advance draft step to next unfilled slot
   const advanceDraftStep = useCallback((bp, rp, bb, rb, fromStep) => {
     let next = fromStep
     while (next < DRAFT_ORDER.length) {
-      const d = DRAFT_ORDER[next]
+      const d   = DRAFT_ORDER[next]
       const arr = d.side === 'blue'
         ? (d.type === 'pick' ? bp : bb)
         : (d.type === 'pick' ? rp : rb)
@@ -94,13 +89,20 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
     }
   }, [])
 
-  const fetchSuggestions = useCallback(async (bp, rp, bb, rb, slotEntry) => {
+  // Triggers whenever either allied OR enemy picks exist — not just allied
+  const fetchSuggestions = useCallback(async (bp, rp, bb, rb, slotEntry, laneOverride = null) => {
     if (champions.length === 0) return
     const allied = (mySide === 'blue' ? bp : rp).filter(Boolean)
     const enemy  = (mySide === 'blue' ? rp : bp).filter(Boolean)
     const bans   = [...bb, ...rb].filter(Boolean)
-    if (allied.length === 0) { setSuggestions([]); setByLane({}); setCounterAnalysis([]); setWinProbability(null); return }
 
+    if (allied.length === 0 && enemy.length === 0) {
+      setSuggestions([]); setByLane({}); setCounterAnalysis([]); setWinProbability(null)
+      return
+    }
+
+    const pos = laneOverride ?? (slotEntry?.type === 'pick' ? (slotEntry.position ?? null) : null)
+    setActivePosition(pos)
     setLoading(true)
     try {
       const available = champions.filter(c => !bans.includes(c) && !bp.includes(c) && !rp.includes(c))
@@ -115,7 +117,7 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
           side:                mySide,
           league:              league || null,
           patch_major:         patch  || null,
-          active_position:     slotEntry?.position ?? null,
+          active_position:     pos,
           top_n:               15,
         }),
       })
@@ -143,16 +145,18 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
     const update = (prev) => { const n = [...prev]; n[index] = champion; return n }
 
     let bp = bluePicks, rp = redPicks, bb = blueBans, rb = redBans
-    if (side === 'blue' && type === 'pick') { bp = update(bluePicks); setBluePicks(bp) }
+    if      (side === 'blue' && type === 'pick') { bp = update(bluePicks); setBluePicks(bp) }
     else if (side === 'red'  && type === 'pick') { rp = update(redPicks);  setRedPicks(rp)  }
     else if (side === 'blue' && type === 'ban')  { bb = update(blueBans);  setBlueBans(bb)  }
     else if (side === 'red'  && type === 'ban')  { rb = update(redBans);   setRedBans(rb)   }
 
     const nextStep = DRAFT_ORDER.findIndex((d, i) =>
       i > draftStep &&
-      !(d.side === 'blue' && d.type === 'pick' ? bp : d.side === 'red' && d.type === 'pick' ? rp : d.side === 'blue' ? bb : rb)[d.index]
+      !(d.side === 'blue' && d.type === 'pick' ? bp
+        : d.side === 'red' && d.type === 'pick' ? rp
+        : d.side === 'blue' ? bb : rb)[d.index]
     )
-    const next = nextStep === -1 ? DRAFT_ORDER.length : nextStep
+    const next      = nextStep === -1 ? DRAFT_ORDER.length : nextStep
     const nextEntry = DRAFT_ORDER[next] ?? null
     setDraftStep(next)
     setActiveSlot(nextEntry)
@@ -162,7 +166,7 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
   const removeChampion = useCallback((side, type, index) => {
     const update = (prev) => { const n = [...prev]; n[index] = null; return n }
     let bp = bluePicks, rp = redPicks, bb = blueBans, rb = redBans
-    if (side === 'blue' && type === 'pick') { bp = update(bluePicks); setBluePicks(bp) }
+    if      (side === 'blue' && type === 'pick') { bp = update(bluePicks); setBluePicks(bp) }
     else if (side === 'red'  && type === 'pick') { rp = update(redPicks);  setRedPicks(rp)  }
     else if (side === 'blue' && type === 'ban')  { bb = update(blueBans);  setBlueBans(bb)  }
     else if (side === 'red'  && type === 'ban')  { rb = update(redBans);   setRedBans(rb)   }
@@ -173,9 +177,23 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
   const handleSlotClick = useCallback((side, type, index) => {
     const clicked = DRAFT_ORDER.find(d => d.side === side && d.type === type && d.index === index)
     setActiveSlot(prev =>
-      prev?.side === side && prev?.type === type && prev?.index === index ? null : (clicked ?? { side, type, index })
+      prev?.side === side && prev?.type === type && prev?.index === index
+        ? null
+        : (clicked ?? { side, type, index })
     )
   }, [])
+
+  const handleLaneChange = useCallback((side, index, lane) => {
+    if (side === 'blue') {
+      setBluePickLanes(prev => { const n = [...prev]; n[index] = lane; return n })
+    } else {
+      setRedPickLanes(prev => { const n = [...prev]; n[index] = lane; return n })
+    }
+    // If this is the active pick slot, re-fetch with the newly chosen lane as active_position
+    if (activeSlot?.side === side && activeSlot?.index === index && activeSlot?.type === 'pick') {
+      fetchSuggestions(bluePicks, redPicks, blueBans, redBans, activeSlot, lane)
+    }
+  }, [activeSlot, bluePicks, redPicks, blueBans, redBans, fetchSuggestions])
 
   const handlePickSuggestion = useCallback((champion) => {
     if (!activeSlot || activeSlot.type !== 'pick' || activeSlot.side !== mySide) {
@@ -189,10 +207,13 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
   }, [activeSlot, mySide, bluePicks, redPicks, selectChampion])
 
   const resetDraft = () => {
-    setBluePicks(EMPTY5()); setRedPicks(EMPTY5())
-    setBlueBans(EMPTY5());  setRedBans(EMPTY5())
-    setDraftStep(0); setActiveSlot(DRAFT_ORDER[0])
-    setSuggestions([]); setByLane({}); setCounterAnalysis([]); setWinProbability(null)
+    setBluePicks(EMPTY5());      setRedPicks(EMPTY5())
+    setBlueBans(EMPTY5());       setRedBans(EMPTY5())
+    setBluePickLanes(EMPTY_LANES()); setRedPickLanes(EMPTY_LANES())
+    setDraftStep(0);             setActiveSlot(DRAFT_ORDER[0])
+    setSuggestions([]);          setByLane({})
+    setCounterAnalysis([]);      setWinProbability(null)
+    setActivePosition(null)
   }
 
   const currentPhase = currentDraftEntry?.phase ?? (isDraftComplete ? 'Draft Completo' : '')
@@ -200,7 +221,6 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
 
   return (
     <div className="draft-root">
-      {/* Phase indicator */}
       <div className="phase-bar" style={{ borderColor: phaseColor }}>
         <div className="phase-steps">
           {DRAFT_ORDER.map((d, i) => (
@@ -214,9 +234,10 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
         <span className="phase-label" style={{ color: phaseColor === '#1e2d40' ? '#785a28' : phaseColor }}>
           {isDraftComplete
             ? '✓ Draft Completo'
-            : `Passo ${(currentDraftEntry?.step ?? '—')} — ${currentPhase} — ${currentDraftEntry?.side === 'blue' ? 'Time Azul' : 'Time Vermelho'}`
+            : `Passo ${currentDraftEntry?.step ?? '—'} — ${currentPhase} — ${currentDraftEntry?.side === 'blue' ? 'Time Azul' : 'Time Vermelho'}`
           }
         </span>
+        <button className="reset-btn-inline" onClick={resetDraft}>Resetar</button>
       </div>
 
       <div className="draft-main">
@@ -225,11 +246,13 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
           isMySide={mySide === 'blue'}
           picks={bluePicks}
           bans={blueBans}
+          lanes={bluePickLanes}
           activeSlot={activeSlot?.side === 'blue' ? activeSlot : null}
           currentDraftSlot={currentDraftEntry?.side === 'blue' ? currentDraftEntry : null}
           slotOrderMap={SLOT_ORDER_MAP}
           onSlotClick={(type, index) => handleSlotClick('blue', type, index)}
           onRemove={(type, index) => removeChampion('blue', type, index)}
+          onLaneChange={(index, lane) => handleLaneChange('blue', index, lane)}
         />
 
         <div className="pool-wrap">
@@ -239,7 +262,6 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
             onSelect={selectChampion}
             activeSlot={activeSlot}
           />
-          <button className="reset-btn" onClick={resetDraft}>Resetar Draft</button>
         </div>
 
         <TeamSide
@@ -247,11 +269,13 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
           isMySide={mySide === 'red'}
           picks={redPicks}
           bans={redBans}
+          lanes={redPickLanes}
           activeSlot={activeSlot?.side === 'red' ? activeSlot : null}
           currentDraftSlot={currentDraftEntry?.side === 'red' ? currentDraftEntry : null}
           slotOrderMap={SLOT_ORDER_MAP}
           onSlotClick={(type, index) => handleSlotClick('red', type, index)}
           onRemove={(type, index) => removeChampion('red', type, index)}
+          onLaneChange={(index, lane) => handleLaneChange('red', index, lane)}
         />
       </div>
 
@@ -265,6 +289,7 @@ export default function DraftBoard({ champions, mySide, league, patch }) {
         alliedPicks={alliedPicks}
         enemyPicks={enemyPicks}
         activeSlot={activeSlot}
+        activePosition={activePosition}
         onPickSuggestion={handlePickSuggestion}
       />
     </div>

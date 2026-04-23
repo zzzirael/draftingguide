@@ -1,7 +1,8 @@
 .team-side {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  min-width: 0;
 }
 
 .team-header {
@@ -10,6 +11,7 @@
   justify-content: space-between;
   padding-bottom: 6px;
   border-bottom: 1px solid #1e2d40;
+  flex-shrink: 0;
 }
 
 .team-label {
@@ -23,7 +25,7 @@
 .red-label  { color: #e84057; }
 
 .my-team-badge {
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 1.5px;
   padding: 2px 6px;
@@ -36,12 +38,13 @@
 /* ── Bans ──────────────────────────────────────────────── */
 .bans-row {
   display: flex;
-  gap: 6px;
+  gap: 5px;
+  flex-shrink: 0;
 }
 
 .ban-slot {
   flex: 1;
-  height: 34px;
+  height: 32px;
   border: 1px dashed #1e2d40;
   border-radius: 3px;
   display: flex;
@@ -59,14 +62,14 @@
 .ban-slot.filled      { background: #0a1520; border-style: solid; border-color: #3d1a1a; }
 
 .ban-name {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   color: #785a28;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .ban-empty {
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   color: #1e2d40;
   text-transform: uppercase;
 }
@@ -75,22 +78,22 @@
 .picks-col {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .pick-slot {
-  height: 64px;
+  min-height: 64px;
   border: 1px solid #1e2d40;
   border-radius: 4px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 10px;
+  gap: 8px;
+  padding: 6px 8px;
   cursor: pointer;
   background: #050d17;
   position: relative;
   transition: all 0.15s;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .pick-slot::before {
@@ -98,25 +101,27 @@
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 3px;
+  border-radius: 4px 0 0 4px;
 }
 
 .pick-slot.blue::before { background: #1a4a7a; }
 .pick-slot.red::before  { background: #7a1a1a; }
 
-.pick-slot:hover         { border-color: #2a3a4c; background: #071018; }
-.pick-slot.active        { border-color: #c8aa6e; box-shadow: 0 0 10px #c8aa6e22; }
-.pick-slot.filled        { background: #091528; }
-.pick-slot.filled.blue   { border-color: #1e3f6e; }
-.pick-slot.filled.red    { border-color: #6e1e1e; }
+.pick-slot:hover       { border-color: #2a3a4c; background: #071018; }
+.pick-slot.active      { border-color: #c8aa6e; box-shadow: 0 0 10px #c8aa6e22; }
+.pick-slot.filled      { background: #091528; }
+.pick-slot.filled.blue { border-color: #1e3f6e; }
+.pick-slot.filled.red  { border-color: #6e1e1e; }
 
+/* ── Avatar ─────────────────────────────────────────────── */
 .champ-avatar {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -132,7 +137,7 @@
 }
 
 .pick-champ {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: #c8aa6e;
   white-space: nowrap;
@@ -140,50 +145,104 @@
   text-overflow: ellipsis;
 }
 
-.pick-pos {
-  font-size: 0.65rem;
-  color: #785a28;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+.pick-lane-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.pick-lane-tag.blue { color: #4a9fdc; }
+.pick-lane-tag.red  { color: #e84057; }
+
+/* Empty slot */
+.pick-empty-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 .pick-empty-avatar {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 1px;
+  font-size: 1rem;
   flex-shrink: 0;
-  text-transform: uppercase;
 }
 
-.pick-empty-avatar.blue { background: #0a1e33; color: #1e3f6e; border: 2px dashed #1e3f6e; }
-.pick-empty-avatar.red  { background: #1a0a0a; color: #6e1e1e; border: 2px dashed #6e1e1e; }
+.pick-empty-avatar.blue { background: #0a1e33; border: 2px dashed #1e3f6e; }
+.pick-empty-avatar.red  { background: #1a0a0a; border: 2px dashed #6e1e1e; }
 
 .pick-empty-label {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: #1e2d40;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Lane picker ─────────────────────────────────────────── */
+.lane-picker {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.lane-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  border: 1px solid #1e2d40;
+  background: #0a1520;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.1s;
+  line-height: 1;
+}
+
+.lane-btn:hover {
+  border-color: #3a4a5c;
+  background: #0f1f33;
+}
+
+.lane-btn.sel-blue {
+  border-color: #4a9fdc;
+  background: #0f3460;
+  box-shadow: 0 0 4px #4a9fdc44;
+}
+
+.lane-btn.sel-red {
+  border-color: #e84057;
+  background: #3d0c11;
+  box-shadow: 0 0 4px #e8405744;
 }
 
 /* ── Draft order numbers ────────────────────────────────── */
 .slot-order-num {
   position: absolute;
-  font-size: 0.58rem;
+  font-size: 0.55rem;
   font-weight: 700;
   color: #2a3a4c;
   line-height: 1;
   pointer-events: none;
 }
 
-.ban-slot .slot-order-num  { top: 3px; left: 4px; }
-.pick-order                { top: 4px; left: 6px; color: #2a3a4c; }
-.pick-order.order-current  { color: #c8aa6e; }
+.ban-slot .slot-order-num { top: 2px; left: 3px; }
+.pick-order               { top: 3px; left: 5px; color: #2a3a4c; }
+.pick-order.order-current { color: #c8aa6e; }
 
-/* ── Draft current (next in order) ─────────────────────── */
+/* ── Draft current (pulse) ──────────────────────────────── */
 .draft-current {
   animation: draft-pulse 1.2s ease-in-out infinite;
 }
@@ -194,14 +253,11 @@
 
 @keyframes draft-pulse {
   0%, 100% { box-shadow: 0 0 0 0 transparent; }
-  50%       { box-shadow: 0 0 0 4px rgba(200, 170, 110, 0.2); }
+  50%       { box-shadow: 0 0 0 3px rgba(200, 170, 110, 0.18); }
 }
 
+/* ── Remove button ──────────────────────────────────────── */
 .remove-btn {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
   background: none;
   border: none;
   color: #3a4a5c;
@@ -211,6 +267,7 @@
   padding: 2px 4px;
   border-radius: 3px;
   transition: color 0.1s;
+  flex-shrink: 0;
 }
 
 .remove-btn:hover { color: #c8aa6e; }

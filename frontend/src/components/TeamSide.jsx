@@ -1,6 +1,14 @@
 import './TeamSide.css'
 
-const POSITIONS = ['Top', 'Jng', 'Mid', 'Bot', 'Sup']
+const LANE_OPTIONS = [
+  { key: 'top', icon: '🗡', label: 'Top' },
+  { key: 'jng', icon: '🌲', label: 'Jng' },
+  { key: 'mid', icon: '⚡', label: 'Mid' },
+  { key: 'bot', icon: '🏹', label: 'Bot' },
+  { key: 'sup', icon: '🛡', label: 'Sup' },
+]
+
+const LANE_MAP = Object.fromEntries(LANE_OPTIONS.map(l => [l.key, l]))
 
 function ChampAvatar({ name, side }) {
   if (!name) return null
@@ -11,19 +19,36 @@ function ChampAvatar({ name, side }) {
   )
 }
 
+function LanePicker({ value, onChange, side }) {
+  return (
+    <div className="lane-picker" onClick={e => e.stopPropagation()}>
+      {LANE_OPTIONS.map(({ key, icon, label }) => (
+        <button
+          key={key}
+          className={`lane-btn ${value === key ? `sel-${side}` : ''}`}
+          title={label}
+          onClick={e => { e.stopPropagation(); onChange(value === key ? '' : key) }}
+        >
+          {icon}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export default function TeamSide({
   side,
   isMySide,
   picks,
   bans,
+  lanes,
   activeSlot,
-  currentDraftSlot,   // slot atual na ordem do draft (pulse)
-  slotOrderMap,       // { 'blue-pick-0': 7, ... }
+  currentDraftSlot,
+  slotOrderMap,
   onSlotClick,
   onRemove,
+  onLaneChange,
 }) {
-  const isBlue = side === 'blue'
-
   const isCurrentDraft = (type, index) =>
     currentDraftSlot?.type === type && currentDraftSlot?.index === index
 
@@ -37,7 +62,7 @@ export default function TeamSide({
     <div className={`team-side ${side}-side`}>
       <div className="team-header">
         <span className={`team-label ${side}-label`}>
-          {isBlue ? '🔵 Time Azul' : '🔴 Time Vermelho'}
+          {side === 'blue' ? '🔵 Time Azul' : '🔴 Time Vermelho'}
         </span>
         {isMySide && <span className="my-team-badge">SEU TIME</span>}
       </div>
@@ -45,9 +70,9 @@ export default function TeamSide({
       {/* Bans */}
       <div className="bans-row">
         {Array.from({ length: 5 }).map((_, i) => {
-          const isDraft  = isCurrentDraft('ban', i)
-          const isAct    = isActive('ban', i)
-          const num      = orderNum('ban', i)
+          const isDraft = isCurrentDraft('ban', i)
+          const isAct   = isActive('ban', i)
+          const num     = orderNum('ban', i)
           return (
             <div
               key={i}
@@ -75,6 +100,8 @@ export default function TeamSide({
           const isDraft = isCurrentDraft('pick', i)
           const isAct   = isActive('pick', i)
           const champ   = picks[i]
+          const lane    = lanes?.[i] || ''
+          const laneInfo = LANE_MAP[lane]
           const num     = orderNum('pick', i)
           return (
             <div
@@ -91,17 +118,25 @@ export default function TeamSide({
                   <ChampAvatar name={champ} side={side} />
                   <div className="pick-info">
                     <span className="pick-champ">{champ}</span>
-                    <span className="pick-pos">{POSITIONS[i]}</span>
+                    {laneInfo && (
+                      <span className={`pick-lane-tag ${side}`}>
+                        {laneInfo.icon} {laneInfo.label}
+                      </span>
+                    )}
                   </div>
+                  <LanePicker value={lane} onChange={v => onLaneChange(i, v)} side={side} />
                   <button className="remove-btn" onClick={e => { e.stopPropagation(); onRemove('pick', i) }}>×</button>
                 </>
               ) : (
-                <>
-                  <div className={`pick-empty-avatar ${side}`}>{POSITIONS[i]}</div>
+                <div className="pick-empty-row">
+                  <div className={`pick-empty-avatar ${side}`}>
+                    {laneInfo ? laneInfo.icon : '·'}
+                  </div>
                   <span className="pick-empty-label">
                     {isDraft ? 'Vez de escolher...' : 'Selecionar campeão'}
                   </span>
-                </>
+                  <LanePicker value={lane} onChange={v => onLaneChange(i, v)} side={side} />
+                </div>
               )}
             </div>
           )

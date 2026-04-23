@@ -181,20 +181,31 @@ class DraftPredictor:
     def _counter_from_matrix(self, enemy_champion: str, state: DraftState, top_n: int) -> list[dict]:
         try:
             conn = sqlite3.connect(self._db_path)
-            clauses = ["vs_champion = ?", "games >= 5"]
-            params  = [enemy_champion]
-            if state.league:
-                clauses.append("league = ?"); params.append(state.league)
-            if state.patch_major:
-                clauses.append("patch_major = ?"); params.append(state.patch_major)
-            where = " AND ".join(clauses)
-            rows = conn.execute(f"""
-                SELECT champion, wins, games
-                FROM counter_matrix
-                WHERE {where}
-                ORDER BY CAST(wins AS FLOAT) / games DESC
-                LIMIT ?
-            """, params + [top_n * 3]).fetchall()
+
+            def query(league=None, patch=None, min_games=5):
+                clauses = ["vs_champion = ?", f"games >= {min_games}"]
+                params  = [enemy_champion]
+                if league: clauses.append("league = ?");      params.append(league)
+                if patch:  clauses.append("patch_major = ?"); params.append(patch)
+                where = " AND ".join(clauses)
+                return conn.execute(f"""
+                    SELECT champion, wins, games
+                    FROM counter_matrix
+                    WHERE {where}
+                    ORDER BY CAST(wins AS FLOAT) / games DESC
+                    LIMIT ?
+                """, params + [top_n * 3]).fetchall()
+
+            rows = query(state.league, state.patch_major, min_games=5)
+
+            # Fallback 1: patch sem dados → tenta sem filtro de patch
+            if not rows and state.patch_major:
+                rows = query(state.league, patch=None, min_games=5)
+
+            # Fallback 2: ainda vazio → sem filtro nenhum
+            if not rows:
+                rows = query(league=None, patch=None, min_games=3)
+
             conn.close()
         except Exception:
             return []

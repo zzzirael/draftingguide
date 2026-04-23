@@ -13,9 +13,8 @@ export default function App() {
   useEffect(() => {
     fetch('/leagues').then(r => r.json()).then(d => setLeagues(d.leagues || []))
     fetch('/patches').then(r => r.json()).then(d => {
-      const list = d.patches || []
-      setPatches(list)
-      if (list.length) setPatch(list[0])
+      setPatches(d.patches || [])
+      // não auto-seleciona patch — dados recentes podem não ter amostra suficiente
     })
     fetch('/champions').then(r => r.json()).then(d => setChampions(d.champions || []))
   }, [])

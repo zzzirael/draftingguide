@@ -6,11 +6,11 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/suggest': 'http://localhost:8000',
-      '/leagues': 'http://localhost:8000',
-      '/patches': 'http://localhost:8000',
-      '/champions': 'http://localhost:8000',
-      '/stats': 'http://localhost:8000',
+      '/suggest': 'http://localhost:8001',
+      '/leagues': 'http://localhost:8001',
+      '/patches': 'http://localhost:8001',
+      '/champions': 'http://localhost:8001',
+      '/stats': 'http://localhost:8001',
     }
   }
 })

@@ -1,18 +1,24 @@
 .draft-root {
   display: flex;
   flex-direction: column;
-  gap: 10px;
   flex: 1;
-  padding: 16px;
   min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 14px;
+  gap: 10px;
 }
+
+.draft-root::-webkit-scrollbar { width: 6px; height: 6px; }
+.draft-root::-webkit-scrollbar-track { background: transparent; }
+.draft-root::-webkit-scrollbar-thumb { background: #1e2d40; border-radius: 3px; }
 
 /* ── Phase bar ───────────────────────────────────────────── */
 .phase-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 14px;
+  gap: 12px;
+  padding: 7px 12px;
   background: #050d17;
   border: 1px solid #1e2d40;
   border-radius: 5px;
@@ -24,6 +30,7 @@
   display: flex;
   gap: 3px;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .phase-dot {
@@ -45,20 +52,42 @@
 .phase-dot.done.ban       { background: #3a2a10; }
 
 .phase-label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* ── Main three-column grid ─────────────────────────────── */
+.reset-btn-inline {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid #1e2d40;
+  border-radius: 4px;
+  color: #3a4a5c;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.reset-btn-inline:hover {
+  border-color: #785a28;
+  color: #785a28;
+}
+
+/* ── Three-column grid ──────────────────────────────────── */
 .draft-main {
   display: grid;
-  grid-template-columns: 1fr 260px 1fr;
-  gap: 12px;
-  flex: 1;
-  min-height: 0;
-  margin-bottom: 12px;
+  grid-template-columns: 1fr 220px 1fr;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: 720px;
 }
 
 /* ── Center pool area ───────────────────────────────────── */
@@ -68,28 +97,8 @@
   background: #050d17;
   border: 1px solid #1e2d40;
   border-radius: 6px;
-  padding: 12px;
-  gap: 10px;
-  min-height: 0;
+  padding: 10px;
+  gap: 8px;
+  height: 440px;
   overflow: hidden;
-}
-
-.reset-btn {
-  width: 100%;
-  padding: 7px;
-  background: transparent;
-  border: 1px solid #1e2d40;
-  border-radius: 4px;
-  color: #3a4a5c;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: all 0.15s;
-  flex-shrink: 0;
-}
-
-.reset-btn:hover {
-  border-color: #785a28;
-  color: #785a28;
 }
