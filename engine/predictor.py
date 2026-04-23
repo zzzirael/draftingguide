@@ -228,6 +228,40 @@ class DraftPredictor:
         return results
 
 
+    def get_matchup_winrate(
+        self,
+        champion: str,
+        vs_champion: str,
+        league: Optional[str] = None,
+        patch_major: Optional[str] = None,
+    ) -> dict:
+        """Head-to-head WR from counter_matrix, with same fallback chain as counter analysis."""
+        try:
+            conn = sqlite3.connect(self._db_path)
+
+            def query(lg=None, pm=None, min_games=5):
+                clauses = ["champion = ?", "vs_champion = ?", f"games >= {min_games}"]
+                params  = [champion, vs_champion]
+                if lg: clauses.append("league = ?");      params.append(lg)
+                if pm: clauses.append("patch_major = ?"); params.append(pm)
+                return conn.execute(
+                    f"SELECT wins, games FROM counter_matrix WHERE {' AND '.join(clauses)} LIMIT 1",
+                    params
+                ).fetchone()
+
+            row = query(league, patch_major, 5)
+            if not row and patch_major: row = query(league, None, 5)
+            if not row:                 row = query(None,   None, 3)
+            conn.close()
+
+            if row:
+                wins, games = row
+                return {"win_rate": round(wins / games, 4) if games else 0.5, "games": games}
+        except Exception:
+            pass
+        return {"win_rate": None, "games": 0}
+
+
 _predictor_instance: Optional[DraftPredictor] = None
 
 

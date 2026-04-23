@@ -11,6 +11,7 @@ export default defineConfig({
       '/patches': 'http://localhost:8001',
       '/champions': 'http://localhost:8001',
       '/stats': 'http://localhost:8001',
+      '/matchup': 'http://localhost:8001',
     }
   }
 })

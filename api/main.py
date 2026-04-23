@@ -152,6 +152,19 @@ def suggest_ml(req: DraftRequest):
     }
 
 
+@app.get("/matchup")
+def matchup_winrate(
+    champion:    str,
+    vs:          str,
+    league:      Optional[str] = None,
+    patch_major: Optional[str] = None,
+):
+    predictor = get_predictor()
+    if predictor is None:
+        return {"win_rate": None, "games": 0}
+    return predictor.get_matchup_winrate(champion, vs, league, patch_major)
+
+
 @app.post("/win-probability")
 def win_probability(req: DraftRequest):
     predictor = get_predictor()

@@ -3,7 +3,6 @@
   border: 1px solid #1e2d40;
   border-radius: 6px;
   flex-shrink: 0;
-  overflow: hidden;
 }
 
 /* ── Top bar ─────────────────────────────────────────────── */
@@ -178,14 +177,10 @@
 .panel-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  max-height: 380px;
-  overflow: hidden;
 }
 
 .panel-col {
   padding: 10px 14px;
-  overflow-y: auto;
-  min-height: 0;
 }
 
 .panel-col::-webkit-scrollbar { width: 4px; }

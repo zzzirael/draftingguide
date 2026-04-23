@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import TeamSide from './TeamSide'
 import ChampionPool from './ChampionPool'
 import SuggestionPanel from './SuggestionPanel'
@@ -26,6 +26,53 @@ const DRAFT_ORDER = [
   { step: 19, phase: 'Picks — Fase 2', side: 'blue', type: 'pick', index: 4 },
   { step: 20, phase: 'Picks — Fase 2', side: 'red',  type: 'pick', index: 4 },
 ]
+
+const LANE_ICONS  = { top: '🗡', jng: '🌲', mid: '⚡', bot: '🏹', sup: '🛡' }
+const LANE_ORDER  = ['top', 'jng', 'mid', 'bot', 'sup']
+
+// ── MatchupBar ────────────────────────────────────────────────────────────────
+function MatchupBar({ items, mySide }) {
+  if (!items.length) return null
+  const isBlue = mySide === 'blue'
+  return (
+    <div className="matchup-bar">
+      <span className="mu-label">MATCHUPS</span>
+      <div className="mu-list">
+        {items.map(({ lane, myChamp, oppChamp, data }) => {
+          const myPct  = data?.win_rate != null ? Math.round(data.win_rate * 100) : null
+          const oppPct = myPct != null ? 100 - myPct : null
+          const advantage = myPct != null ? myPct - 50 : 0
+          const advColor  = advantage > 3 ? '#4caf50' : advantage < -3 ? '#e84057' : '#c8aa6e'
+          return (
+            <div key={lane} className="mu-card">
+              <div className="mu-lane-icon">{LANE_ICONS[lane]}</div>
+              <div className="mu-content">
+                <div className="mu-champs">
+                  <span className={`mu-champ ${isBlue ? 'mu-blue' : 'mu-red'}`}>{myChamp}</span>
+                  <span className="mu-vs">vs</span>
+                  <span className={`mu-champ ${isBlue ? 'mu-red' : 'mu-blue'}`}>{oppChamp}</span>
+                </div>
+                {myPct != null ? (
+                  <div className="mu-stats">
+                    <span className="mu-pct" style={{ color: advColor }}>{myPct}%</span>
+                    <div className="mu-bar">
+                      <div className="mu-my"  style={{ width: `${myPct}%`,  background: isBlue ? '#1a4a8a' : '#7a1a1a' }} />
+                      <div className="mu-opp" style={{ width: `${oppPct}%`, background: isBlue ? '#7a1a1a' : '#1a4a8a' }} />
+                    </div>
+                    <span className="mu-pct mu-opp-pct">{oppPct}%</span>
+                    {data.games > 0 && <span className="mu-games">{data.games}g</span>}
+                  </div>
+                ) : (
+                  <div className="mu-loading">buscando dados···</div>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 const PHASE_COLORS = {
   'Banimentos — Fase 1': '#7a1a1a',
@@ -79,6 +126,48 @@ export default function DraftBoard({ champions, seriesConfig, seriesState, onGam
 
   // Game result state (set after draft complete)
   const [gameWinner, setGameWinner] = useState(null)
+
+  // ── Lane matchup data ──────────────────────────────────────────────────────
+  const [matchupData, setMatchupData] = useState({})
+  const lastFetchedMatchup = useRef({})
+
+  const laneMatchups = useMemo(() => {
+    const myPicks  = mySide === 'blue' ? bluePicks      : redPicks
+    const myLanes  = mySide === 'blue' ? bluePickLanes  : redPickLanes
+    const oppPicks = mySide === 'blue' ? redPicks       : bluePicks
+    const oppLanes = mySide === 'blue' ? redPickLanes   : bluePickLanes
+    return LANE_ORDER.map(lane => {
+      const myIdx  = myLanes.findIndex(l => l === lane)
+      const oppIdx = oppLanes.findIndex(l => l === lane)
+      return {
+        lane,
+        myChamp:  myIdx  >= 0 ? myPicks[myIdx]   : null,
+        oppChamp: oppIdx >= 0 ? oppPicks[oppIdx]  : null,
+      }
+    })
+  }, [mySide, bluePicks, redPicks, bluePickLanes, redPickLanes])
+
+  useEffect(() => {
+    laneMatchups.forEach(({ lane, myChamp, oppChamp }) => {
+      const key = myChamp && oppChamp ? `${myChamp}|${oppChamp}|${league}|${patch}` : null
+      if (!key) {
+        if (lastFetchedMatchup.current[lane]) {
+          delete lastFetchedMatchup.current[lane]
+          setMatchupData(p => { const n = { ...p }; delete n[lane]; return n })
+        }
+        return
+      }
+      if (lastFetchedMatchup.current[lane] === key) return
+      lastFetchedMatchup.current[lane] = key
+      const params = new URLSearchParams({ champion: myChamp, vs: oppChamp })
+      if (league) params.append('league', league)
+      if (patch)  params.append('patch_major', patch)
+      fetch(`/matchup?${params}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) setMatchupData(p => ({ ...p, [lane]: data })) })
+        .catch(() => {})
+    })
+  }, [laneMatchups, league, patch])
 
   const alliedPicks   = mySide === 'blue' ? bluePicks : redPicks
   const enemyPicks    = mySide === 'blue' ? redPicks  : bluePicks
@@ -223,6 +312,7 @@ export default function DraftBoard({ champions, seriesConfig, seriesState, onGam
     setSuggestions([]);          setByLane({})
     setCounterAnalysis([]);      setWinProbability(null)
     setActivePosition(null);     setGameWinner(null)
+    setMatchupData({});          lastFetchedMatchup.current = {}
   }
 
   const handleGameWinner = (winner) => {
@@ -398,6 +488,13 @@ export default function DraftBoard({ champions, seriesConfig, seriesState, onGam
           onLaneChange={(index, lane) => handleLaneChange('red', index, lane)}
         />
       </div>
+
+      <MatchupBar
+        items={laneMatchups
+          .filter(m => m.myChamp && m.oppChamp)
+          .map(m => ({ ...m, data: matchupData[m.lane] || null }))}
+        mySide={mySide}
+      />
 
       <SuggestionPanel
         winProbability={winProbability}

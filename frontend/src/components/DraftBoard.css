@@ -1,12 +1,9 @@
 .draft-root {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: auto;
-  padding: 10px 14px 14px;
+  padding: 10px 14px 24px;
   gap: 8px;
+  min-width: 760px;
 }
 
 /* ── Series bar ──────────────────────────────────────────── */
@@ -305,6 +302,131 @@
 }
 
 /* ── Center pool area ───────────────────────────────────── */
+/* ── Matchup bar ─────────────────────────────────────────── */
+.matchup-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #050d17;
+  border: 1px solid #1e2d40;
+  border-radius: 5px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.mu-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #3a4a5c;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.mu-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
+
+.mu-card {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #03080f;
+  border: 1px solid #1e2d40;
+  border-radius: 4px;
+  padding: 5px 10px;
+  min-width: 200px;
+}
+
+.mu-lane-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.mu-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mu-champs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+}
+
+.mu-champ {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+
+.mu-blue { color: #4a9fdc; }
+.mu-red  { color: #e84057; }
+
+.mu-vs {
+  font-size: 0.58rem;
+  color: #2a3a4c;
+  flex-shrink: 0;
+}
+
+.mu-stats {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mu-pct {
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  min-width: 28px;
+}
+
+.mu-opp-pct {
+  color: #506070;
+  text-align: right;
+}
+
+.mu-bar {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #0a1520;
+  display: flex;
+}
+
+.mu-my, .mu-opp {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.mu-games {
+  font-size: 0.55rem;
+  color: #2a3a4c;
+  flex-shrink: 0;
+}
+
+.mu-loading {
+  font-size: 0.6rem;
+  color: #2a3a4c;
+  animation: blink 1.2s infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── Pool wrap ────────────────────────────────────────────── */
 .pool-wrap {
   display: flex;
   flex-direction: column;
