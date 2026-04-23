@@ -57,6 +57,17 @@
 .pool-search:focus { border-color: #c8aa6e44; }
 .pool-search::placeholder { color: #2a3a4c; }
 
+.pool-fearless-count {
+  font-size: 0.65rem;
+  color: #785a28;
+  background: #1a1200;
+  border: 1px solid #3a2a00;
+  padding: 2px 7px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  align-self: center;
+}
+
 .pool-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));

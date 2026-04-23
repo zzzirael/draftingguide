@@ -1,16 +1,19 @@
 import { useState, useMemo } from 'react'
 import './ChampionPool.css'
 
-export default function ChampionPool({ champions, usedChampions, onSelect, activeSlot }) {
+export default function ChampionPool({ champions, usedChampions, fearlessLocked = [], onSelect, activeSlot }) {
   const [search, setSearch] = useState('')
+
+  const fearlessSet = useMemo(() => new Set(fearlessLocked), [fearlessLocked])
 
   const filtered = useMemo(() => {
     const used = new Set(usedChampions)
     return champions.filter(c =>
       !used.has(c) &&
+      !fearlessSet.has(c) &&
       c.toLowerCase().includes(search.toLowerCase())
     )
-  }, [champions, usedChampions, search])
+  }, [champions, usedChampions, fearlessSet, search])
 
   if (!activeSlot) {
     return (
@@ -36,6 +39,11 @@ export default function ChampionPool({ champions, usedChampions, onSelect, activ
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
+        {fearlessLocked.length > 0 && (
+          <span className="pool-fearless-count" title="Campeões bloqueados pelo Fearless">
+            🔒 {fearlessLocked.length}
+          </span>
+        )}
       </div>
 
       {filtered.length === 0 ? (

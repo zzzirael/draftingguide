@@ -5,8 +5,222 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: auto;
-  padding: 14px;
+  padding: 10px 14px 14px;
+  gap: 8px;
+}
+
+/* ── Series bar ──────────────────────────────────────────── */
+.series-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 12px;
+  background: #050d17;
+  border: 1px solid #1e2d40;
+  border-radius: 5px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.back-btn {
+  background: transparent;
+  border: 1px solid #1e2d40;
+  border-radius: 4px;
+  color: #506070;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.back-btn:hover { border-color: #785a28; color: #c8aa6e; }
+
+.series-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.series-fmt {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #c8aa6e;
+  letter-spacing: 1px;
+}
+
+.series-tag {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 1px;
+}
+
+.fearless-tag {
+  background: #2a1a00;
+  border: 1px solid #c8aa6e;
+  color: #c8aa6e;
+}
+
+.series-game {
+  font-size: 0.72rem;
+  color: #506070;
+}
+
+.series-score {
+  display: flex;
+  align-items: center;
   gap: 10px;
+  flex: 1;
+  justify-content: center;
+}
+
+.score-team {
+  font-size: 0.82rem;
+  font-weight: 600;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score-blue { color: #4a9fdc; }
+.score-red  { color: #e84057; }
+
+.score-nums {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.score-dash { color: #1e2d40; }
+.score-leading { color: #c8aa6e; }
+
+.series-meta {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.meta-tag {
+  font-size: 0.65rem;
+  background: #0a1428;
+  border: 1px solid #1e2d40;
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: #506070;
+}
+
+/* ── Fearless bar ────────────────────────────────────────── */
+.fearless-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: #0d0a00;
+  border: 1px solid #3a2a00;
+  border-radius: 5px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.fearless-bar-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #785a28;
+  flex-shrink: 0;
+}
+
+.fearless-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.fearless-chip {
+  font-size: 0.68rem;
+  background: #1a1200;
+  border: 1px solid #3a2a00;
+  color: #785a28;
+  padding: 1px 7px;
+  border-radius: 3px;
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+/* ── Game result bar ─────────────────────────────────────── */
+.game-result-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #050d17;
+  border: 1px solid #1e3a1e;
+  border-radius: 5px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.result-label {
+  font-size: 0.78rem;
+  color: #c8aa6e;
+  font-weight: 600;
+  flex: 1;
+  white-space: nowrap;
+}
+
+.result-btn {
+  padding: 5px 16px;
+  border-radius: 4px;
+  border: 1px solid;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.result-blue { background: #0a1e3a; border-color: #4a9fdc; color: #7ec8e3; }
+.result-blue:hover { background: #0f3460; }
+.result-red  { background: #2a0a0f; border-color: #e84057; color: #ff6b7a; }
+.result-red:hover  { background: #3d0c11; }
+
+.next-game-btn {
+  padding: 5px 16px;
+  background: linear-gradient(135deg, #1a3a1a, #0f2a0f);
+  border: 1px solid #c8aa6e;
+  border-radius: 4px;
+  color: #c8aa6e;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.next-game-btn:hover { background: linear-gradient(135deg, #2a5a2a, #1a4a1a); }
+
+/* ── Series over bar ─────────────────────────────────────── */
+.series-over-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #0a1a0a;
+  border: 1px solid #c8aa6e;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+.series-over-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #c8aa6e;
+  letter-spacing: 0.5px;
 }
 
 .draft-root::-webkit-scrollbar { width: 6px; height: 6px; }

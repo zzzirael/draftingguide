@@ -1,69 +1,72 @@
 import { useState, useEffect } from 'react'
+import MenuScreen from './components/MenuScreen'
 import DraftBoard from './components/DraftBoard'
 import './App.css'
 
+const STORAGE_KEY = 'draft-sim-v1'
+
+function loadSaved() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) }
+  catch { return null }
+}
+
 export default function App() {
-  const [leagues, setLeagues]   = useState([])
-  const [patches, setPatches]   = useState([])
+  const [screen,    setScreen]    = useState('menu')
   const [champions, setChampions] = useState([])
-  const [league, setLeague]     = useState('')
-  const [patch, setPatch]       = useState('')
-  const [mySide, setMySide]     = useState('blue')
+  const [leagues,   setLeagues]   = useState([])
+  const [patches,   setPatches]   = useState([])
+
+  const [seriesConfig, setSeriesConfig] = useState(null)
+  const [seriesState,  setSeriesState]  = useState(null)
 
   useEffect(() => {
     fetch('/leagues').then(r => r.json()).then(d => setLeagues(d.leagues || []))
-    fetch('/patches').then(r => r.json()).then(d => {
-      setPatches(d.patches || [])
-      // não auto-seleciona patch — dados recentes podem não ter amostra suficiente
-    })
+    fetch('/patches').then(r => r.json()).then(d => setPatches(d.patches || []))
     fetch('/champions').then(r => r.json()).then(d => setChampions(d.champions || []))
   }, [])
 
+  const handleStart = (config) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
+    setSeriesConfig(config)
+    setSeriesState({ currentGame: 1, myWins: 0, oppWins: 0, fearlessUsed: [], games: [] })
+    setScreen('draft')
+  }
+
+  const handleGameEnd = (winner, myPicks, oppPicks) => {
+    setSeriesState(prev => {
+      const myWins  = prev.myWins  + (winner === 'my'  ? 1 : 0)
+      const oppWins = prev.oppWins + (winner === 'opp' ? 1 : 0)
+      const fearlessUsed = seriesConfig?.fearless
+        ? [...new Set([...prev.fearlessUsed, ...myPicks, ...oppPicks])]
+        : prev.fearlessUsed
+      return {
+        currentGame: prev.currentGame + 1,
+        myWins, oppWins, fearlessUsed,
+        games: [...prev.games, { myPicks, oppPicks, winner }],
+      }
+    })
+  }
+
+  if (screen === 'menu') {
+    return (
+      <MenuScreen
+        allChampions={champions}
+        leagues={leagues}
+        patches={patches}
+        savedData={loadSaved()}
+        onStart={handleStart}
+      />
+    )
+  }
+
   return (
     <div className="app">
-      <header className="header">
-        <div className="header-brand">
-          <span className="brand-icon">⚔</span>
-          <span className="brand-name">Draft Simulator</span>
-          <span className="brand-sub">Competitivo</span>
-        </div>
-
-        <div className="header-controls">
-          <div className="side-selector">
-            <span className="ctrl-label">Meu time</span>
-            <button
-              className={`side-btn blue-btn ${mySide === 'blue' ? 'active' : ''}`}
-              onClick={() => setMySide('blue')}
-            >Azul</button>
-            <button
-              className={`side-btn red-btn ${mySide === 'red' ? 'active' : ''}`}
-              onClick={() => setMySide('red')}
-            >Vermelho</button>
-          </div>
-
-          <div className="ctrl-group">
-            <span className="ctrl-label">Liga</span>
-            <select value={league} onChange={e => setLeague(e.target.value)}>
-              <option value="">Todas</option>
-              {leagues.map(l => <option key={l} value={l}>{l}</option>)}
-            </select>
-          </div>
-
-          <div className="ctrl-group">
-            <span className="ctrl-label">Patch</span>
-            <select value={patch} onChange={e => setPatch(e.target.value)}>
-              <option value="">Todos</option>
-              {patches.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </div>
-        </div>
-      </header>
-
       <DraftBoard
         champions={champions}
-        mySide={mySide}
-        league={league}
-        patch={patch}
+        seriesConfig={seriesConfig}
+        seriesState={seriesState}
+        onGameEnd={handleGameEnd}
+        onBackToMenu={() => setScreen('menu')}
       />
     </div>
   )

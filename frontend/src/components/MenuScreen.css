@@ -1,0 +1,445 @@
+/* ── Menu Screen ─────────────────────────────────────────── */
+.menu-screen {
+  min-height: 100vh;
+  background: #010a13;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px 48px;
+  gap: 28px;
+  overflow-y: auto;
+}
+
+/* ── Brand ───────────────────────────────────────────────── */
+.menu-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.menu-brand-icon {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.menu-brand-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #c8aa6e;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.menu-brand-sub {
+  font-size: 0.72rem;
+  color: #785a28;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-top: 2px;
+}
+
+/* ── Config row ──────────────────────────────────────────── */
+.menu-config-row {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 960px;
+  flex-wrap: wrap;
+}
+
+.config-card {
+  background: #091428;
+  border: 1px solid #1e2d40;
+  border-radius: 6px;
+  padding: 16px 20px;
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.config-card-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #785a28;
+  font-weight: 600;
+}
+
+/* Format buttons */
+.format-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.fmt-btn {
+  flex: 1;
+  background: #0a1428;
+  border: 1px solid #1e2d40;
+  border-radius: 4px;
+  padding: 8px 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: all 0.15s;
+}
+
+.fmt-btn:hover { border-color: #785a28; }
+
+.fmt-btn.fmt-active {
+  background: #1a3a1a;
+  border-color: #c8aa6e;
+}
+
+.fmt-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #c8aa6e;
+  letter-spacing: 1px;
+}
+
+.fmt-sub {
+  font-size: 0.62rem;
+  color: #785a28;
+}
+
+/* Fearless button */
+.fearless-btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  transition: all 0.15s;
+  align-self: flex-start;
+}
+
+.fearless-off {
+  background: #0a1428;
+  border-color: #1e2d40;
+  color: #506070;
+}
+
+.fearless-off:hover { border-color: #785a28; color: #a0a8b8; }
+
+.fearless-on {
+  background: #2a1a00;
+  border-color: #c8aa6e;
+  color: #c8aa6e;
+}
+
+.fearless-desc {
+  font-size: 0.72rem;
+  color: #785a28;
+  line-height: 1.4;
+}
+
+/* Context selects */
+.ctx-selects {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ctx-sel {
+  background: #0a1428;
+  border: 1px solid #1e2d40;
+  color: #c8aa6e;
+  padding: 6px 10px;
+  border-radius: 3px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.ctx-sel:focus { outline: none; border-color: #785a28; }
+
+/* ── Teams row ───────────────────────────────────────────── */
+.menu-teams-row {
+  display: flex;
+  gap: 0;
+  width: 100%;
+  max-width: 960px;
+  align-items: stretch;
+}
+
+.teams-vs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #785a28;
+  letter-spacing: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Team panel ──────────────────────────────────────────── */
+.team-panel {
+  flex: 1;
+  background: #091428;
+  border: 1px solid #1e2d40;
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.my-panel { border-color: #1e3a5a; }
+.opp-panel { border-color: #3a1e1e; }
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.panel-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.badge-my  { background: #0f3460; color: #4a9fdc; border: 1px solid #1e4a7a; }
+.badge-opp { background: #3d0c11; color: #e84057; border: 1px solid #6a1a25; }
+
+.team-name-inp {
+  flex: 1;
+  background: #0a1428;
+  border: 1px solid #1e2d40;
+  color: #c8aa6e;
+  padding: 6px 10px;
+  border-radius: 3px;
+  font-size: 0.88rem;
+  min-width: 0;
+}
+
+.team-name-inp:focus { outline: none; border-color: #785a28; }
+.team-name-inp::placeholder { color: #404858; }
+
+.side-mini-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.side-mini {
+  padding: 4px 8px;
+  border-radius: 3px;
+  border: 1px solid #1e2d40;
+  background: #0a1428;
+  cursor: pointer;
+  font-size: 0.72rem;
+  color: #506070;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.side-mini:hover { border-color: #785a28; }
+
+.side-mini-active-blue {
+  background: #0f3460;
+  border-color: #4a9fdc;
+  color: #7ec8e3;
+}
+
+.side-mini-active-red {
+  background: #3d0c11;
+  border-color: #e84057;
+  color: #ff6b7a;
+}
+
+/* ── Players ─────────────────────────────────────────────── */
+.panel-players {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+}
+
+.role-ico {
+  font-size: 1rem;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+
+.player-name-inp {
+  width: 80px;
+  flex-shrink: 0;
+  background: #0a1428;
+  border: 1px solid #1e2d40;
+  color: #a0a8b8;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 0.78rem;
+}
+
+.player-name-inp:focus { outline: none; border-color: #785a28; }
+.player-name-inp::placeholder { color: #404858; }
+
+/* ── Pool input ──────────────────────────────────────────── */
+.pool-input-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  background: #050d17;
+  border: 1px solid #1e2d40;
+  border-radius: 3px;
+  padding: 3px 6px;
+  min-height: 28px;
+}
+
+.pool-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #1a2d40;
+  border: 1px solid #2a4060;
+  border-radius: 3px;
+  padding: 1px 6px 1px 7px;
+  font-size: 0.72rem;
+  color: #c8aa6e;
+  white-space: nowrap;
+}
+
+.chip-rm {
+  background: none;
+  border: none;
+  color: #506070;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.chip-rm:hover { color: #e84057; }
+
+.pool-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pool-search {
+  background: none;
+  border: none;
+  color: #a0a8b8;
+  font-size: 0.75rem;
+  outline: none;
+  width: 80px;
+  min-width: 60px;
+  padding: 1px 2px;
+}
+
+.pool-search::placeholder { color: #304050; }
+
+.pool-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: #091428;
+  border: 1px solid #1e3a5a;
+  border-radius: 4px;
+  min-width: 160px;
+  z-index: 200;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+.pool-opt {
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  color: #a0a8b8;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.pool-opt:hover {
+  background: #1e3a5a;
+  color: #c8aa6e;
+}
+
+/* ── Footer / Start ──────────────────────────────────────── */
+.menu-footer {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 960px;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #1e2d40;
+}
+
+.start-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.start-info-fmt {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #c8aa6e;
+  letter-spacing: 1px;
+}
+
+.start-info-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 1px;
+}
+
+.fearless-tag {
+  background: #2a1a00;
+  border: 1px solid #c8aa6e;
+  color: #c8aa6e;
+}
+
+.start-info-detail {
+  font-size: 0.78rem;
+  color: #506070;
+}
+
+.start-btn {
+  background: linear-gradient(135deg, #1a3a1a, #0f2a0f);
+  border: 1px solid #c8aa6e;
+  color: #c8aa6e;
+  padding: 12px 36px;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.start-btn:hover {
+  background: linear-gradient(135deg, #2a5a2a, #1a4a1a);
+  box-shadow: 0 0 20px rgba(200, 170, 110, 0.2);
+}
+
+.start-btn:active { transform: scale(0.98); }
