@@ -1,8 +1,61 @@
+import { useMemo } from 'react'
+import { detectArchetype, TAG_META } from './champion-archetypes'
 import './SuggestionPanel.css'
 
 const LANE_LABELS = { top: 'Top', jng: 'Jng', mid: 'Mid', bot: 'Bot', sup: 'Sup' }
 const LANE_ICONS  = { top: '🗡', jng: '🌲', mid: '⚡', bot: '🏹', sup: '🛡' }
 const LANE_ORDER  = ['top', 'jng', 'mid', 'bot', 'sup']
+
+// ── Archetype bar ─────────────────────────────────────────────────────────────
+
+function ArchetypeBar({ alliedPicks }) {
+  const result = useMemo(() => detectArchetype(alliedPicks), [alliedPicks])
+  if (!result) return null
+
+  return (
+    <div className="archetype-bar">
+      <span className="archetype-label">COMP</span>
+
+      {result.primary ? (
+        <span className="archetype-primary" style={{ color: result.primary.color }}>
+          {result.primary.icon} {result.primary.label.toUpperCase()}
+        </span>
+      ) : (
+        <span className="archetype-neutral">BALANCEADA</span>
+      )}
+
+      {result.secondary.length > 0 && (
+        <span className="archetype-sep">·</span>
+      )}
+
+      <div className="archetype-tags">
+        {result.secondary.map(a => (
+          <span key={a.key} className="archetype-tag" style={{ color: a.color }}>
+            {a.icon} {a.label}
+          </span>
+        ))}
+        {Object.entries(result.counts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .filter(([tag]) => TAG_META[tag])
+          .map(([tag, count]) => (
+            <span key={tag} className="archetype-count-tag">
+              {TAG_META[tag].icon} ×{count}
+            </span>
+          ))
+        }
+      </div>
+
+      {result.gaps.length > 0 && (
+        <div className="archetype-gaps">
+          {result.gaps.map(g => (
+            <span key={g} className="archetype-gap">⚠ {g}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ── Win probability bar ───────────────────────────────────────────────────────
 
@@ -39,19 +92,24 @@ function WinBar({ probability, mySide }) {
 
 // ── Mini champion card ────────────────────────────────────────────────────────
 
-function MiniChamp({ champion, winProb, delta, primaryPosition, onClick }) {
+function MiniChamp({ champion, winProb, delta, primaryPosition, inPool, onClick }) {
   const pct      = Math.round((winProb ?? 0.5) * 100)
   const deltaPct = Math.round(Math.abs(delta ?? 0) * 100)
   const isPos    = (delta ?? 0) >= 0
   const laneIcon = LANE_ICONS[primaryPosition]
 
   return (
-    <div className="mini-champ" onClick={() => onClick?.(champion)} title={`${champion} — ${pct}% win rate`}>
+    <div
+      className={`mini-champ${inPool ? ' mini-in-pool' : ''}`}
+      onClick={() => onClick?.(champion)}
+      title={`${champion} — ${pct}% win rate${inPool ? ' ✓ no pool' : ''}`}
+    >
       <div className="mini-avatar">{champion.slice(0, 2)}</div>
       <div className="mini-info">
         <div className="mini-top-row">
           <span className="mini-name">{champion}</span>
-          {laneIcon && (
+          {inPool && <span className="mini-pool-badge">✓</span>}
+          {laneIcon && !inPool && (
             <span className="mini-lane-badge" title={LANE_LABELS[primaryPosition]}>
               {laneIcon} <span className="mini-lane-label">{LANE_LABELS[primaryPosition]}</span>
             </span>
@@ -73,12 +131,13 @@ function MiniChamp({ champion, winProb, delta, primaryPosition, onClick }) {
 
 // ── Lane suggestions ──────────────────────────────────────────────────────────
 
-function LaneSuggestions({ byLane, activePosition, onPick }) {
+function LaneSuggestions({ byLane, activePosition, poolByLane, onPick }) {
   return (
     <div className="lane-suggestions">
       {LANE_ORDER.map(lane => {
         const picks    = byLane[lane] || []
         const isActive = lane === activePosition
+        const lanePool = poolByLane?.[lane]
         return (
           <div key={lane} className={`lane-row ${isActive ? 'lane-active' : ''}`}>
             <div className="lane-header">
@@ -95,6 +154,7 @@ function LaneSuggestions({ byLane, activePosition, onPick }) {
                   winProb={p.win_probability}
                   delta={p.delta}
                   primaryPosition={p.primary_position}
+                  inPool={lanePool ? lanePool.has(p.champion) : false}
                   onClick={onPick}
                 />
               ))}
@@ -108,7 +168,7 @@ function LaneSuggestions({ byLane, activePosition, onPick }) {
 
 // ── Counter analysis ──────────────────────────────────────────────────────────
 
-function CounterAnalysis({ counterAnalysis, onPick }) {
+function CounterAnalysis({ counterAnalysis, allPoolSet, onPick }) {
   if (!counterAnalysis?.length) return null
   return (
     <div className="counter-section">
@@ -128,6 +188,7 @@ function CounterAnalysis({ counterAnalysis, onPick }) {
                 winProb={p.win_probability}
                 delta={p.delta}
                 primaryPosition={p.primary_position}
+                inPool={allPoolSet ? allPoolSet.has(p.champion) : false}
                 onClick={onPick}
               />
             ))}
@@ -143,6 +204,7 @@ function CounterAnalysis({ counterAnalysis, onPick }) {
 export default function SuggestionPanel({
   winProbability, suggestions, byLane, counterAnalysis,
   loading, mySide, alliedPicks, enemyPicks, activeSlot, activePosition,
+  myTeamPlayers,
   onPickSuggestion,
 }) {
   const hasAllied  = alliedPicks.filter(Boolean).length > 0
@@ -151,12 +213,28 @@ export default function SuggestionPanel({
   const hasLanes   = byLane && Object.values(byLane).some(arr => arr?.length > 0)
   const hasCounters = counterAnalysis?.length > 0
 
+  // Pool lookups
+  const poolByLane = useMemo(() => {
+    if (!myTeamPlayers?.length) return {}
+    const map = {}
+    myTeamPlayers.forEach(p => { if (p.pool?.length) map[p.role] = new Set(p.pool) })
+    return map
+  }, [myTeamPlayers])
+
+  const allPoolSet = useMemo(() => {
+    if (!myTeamPlayers?.length) return null
+    const all = myTeamPlayers.flatMap(p => p.pool || [])
+    return all.length ? new Set(all) : null
+  }, [myTeamPlayers])
+
   return (
     <div className="suggestion-panel">
       <div className="panel-top">
         <WinBar probability={hasAllied ? winProbability : null} mySide={mySide} />
         {loading && <span className="loading-badge">calculando...</span>}
       </div>
+
+      <ArchetypeBar alliedPicks={alliedPicks} />
 
       {!hasAny && (
         <div className="panel-idle">
@@ -185,14 +263,23 @@ export default function SuggestionPanel({
               )}
             </div>
             {hasLanes
-              ? <LaneSuggestions byLane={byLane} activePosition={activePosition} onPick={onPickSuggestion} />
+              ? <LaneSuggestions
+                  byLane={byLane}
+                  activePosition={activePosition}
+                  poolByLane={poolByLane}
+                  onPick={onPickSuggestion}
+                />
               : <div className="empty-msg">Aguardando dados...</div>
             }
           </div>
 
           <div className="panel-col">
             {hasCounters
-              ? <CounterAnalysis counterAnalysis={counterAnalysis} onPick={onPickSuggestion} />
+              ? <CounterAnalysis
+                  counterAnalysis={counterAnalysis}
+                  allPoolSet={allPoolSet}
+                  onPick={onPickSuggestion}
+                />
               : (
                 <div className="counter-placeholder">
                   <div className="section-title counter-title">⚔ Counters aos picks inimigos</div>

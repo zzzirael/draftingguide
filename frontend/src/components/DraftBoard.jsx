@@ -410,6 +410,7 @@ export default function DraftBoard({ champions, seriesConfig, seriesState, onGam
         enemyPicks={enemyPicks}
         activeSlot={activeSlot}
         activePosition={activePosition}
+        myTeamPlayers={seriesConfig?.myTeam?.players ?? []}
         onPickSuggestion={handlePickSuggestion}
       />
     </div>

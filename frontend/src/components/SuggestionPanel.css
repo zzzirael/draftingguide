@@ -69,6 +69,86 @@
   text-align: center;
 }
 
+/* ── Archetype bar ───────────────────────────────────────── */
+.archetype-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 16px;
+  border-bottom: 1px solid #0d1928;
+  background: #03080f;
+}
+
+.archetype-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #3a4a5c;
+  flex-shrink: 0;
+}
+
+.archetype-primary {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.archetype-neutral {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #506070;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.archetype-sep {
+  color: #1e2d40;
+  flex-shrink: 0;
+}
+
+.archetype-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.archetype-tag {
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #050d17;
+  border: 1px solid #1e2d40;
+}
+
+.archetype-count-tag {
+  font-size: 0.62rem;
+  color: #3a4a5c;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #03080f;
+}
+
+.archetype-gaps {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.archetype-gap {
+  font-size: 0.62rem;
+  color: #c8622a;
+  background: #1a0d00;
+  border: 1px solid #4a2a00;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
 /* ── Idle ────────────────────────────────────────────────── */
 .panel-idle {
   display: flex;
@@ -186,6 +266,24 @@
 }
 
 .mini-champ:hover { background: #0a1520; }
+
+.mini-in-pool {
+  background: #031a0a;
+  border-left: 2px solid #2a7a2a;
+}
+.mini-in-pool:hover { background: #052a10; }
+
+.mini-pool-badge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #4caf50;
+  background: #0a2a0a;
+  border: 1px solid #2a7a2a;
+  border-radius: 2px;
+  padding: 0 4px;
+  flex-shrink: 0;
+  letter-spacing: 0;
+}
 
 .mini-avatar {
   width: 22px;
