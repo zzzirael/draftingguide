@@ -127,12 +127,13 @@ build_counter_matrix('data/lol.db')
 ### 6. Subir a API
 
 ```bash
-uvicorn api.main:app --reload
+# SEM --reload (evita travamento no Windows com o modelo LightGBM grande)
+uvicorn api.main:app --port 8001
 ```
 
-A API estará disponível em: **http://localhost:8000**
+A API estará disponível em: **http://localhost:8001**
 
-Documentação interativa (Swagger): **http://localhost:8000/docs**
+Documentação interativa (Swagger): **http://localhost:8001/docs**
 
 ### 7. Instalar dependências do frontend
 
@@ -155,14 +156,14 @@ O frontend estará disponível em: **http://localhost:3000** (ou na porta indica
 
 | Serviço | Endereço |
 |---|---|
-| API REST | http://localhost:8000 |
-| Documentação da API (Swagger) | http://localhost:8000/docs |
+| API REST | http://localhost:8001 |
+| Documentação da API (Swagger) | http://localhost:8001/docs |
 | Frontend React | http://localhost:3000 |
 
 ### Teste rápido da API
 
 ```bash
-curl -X POST http://localhost:8000/suggest \
+curl -X POST http://localhost:8001/suggest-ml \
   -H "Content-Type: application/json" \
   -d '{
     "allied_picks": ["Orianna", "Vi"],
@@ -248,17 +249,11 @@ Get-Item data\lol.db | Select-Object Length
 
 ---
 
-### Porta 8000 já em uso
+### Porta 8001 já em uso
 
 **Sintoma**: `[ERROR] Address already in use`.
 
-**Solução**: use outra porta:
-
-```bash
-uvicorn api.main:app --reload --port 8001
-```
-
-Atualize a URL base no frontend em `frontend/src/` caso necessário.
+**Solução**: no Windows, processos anteriores podem manter a porta em TIME_WAIT. Feche o terminal onde o uvicorn estava rodando e aguarde ~30 segundos, ou reinicie o computador. Evite usar `--reload` — o modelo LightGBM é grande e o reload trava no Windows.
 
 ---
 

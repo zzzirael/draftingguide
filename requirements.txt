@@ -2,9 +2,6 @@ fastapi
 uvicorn[standard]
 pandas
 numpy
-requests
-beautifulsoup4
-python-dotenv
 lightgbm
 scikit-learn
 joblib
