@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import MenuScreen     from './components/MenuScreen'
 import DraftBoard     from './components/DraftBoard'
 import AnalysisScreen from './components/AnalysisScreen'
+import { initDDVersion } from './utils/ddragon'
 import './App.css'
 
 const STORAGE_KEY = 'draft-sim-v1'
@@ -24,6 +25,8 @@ export default function App() {
     fetch('/leagues').then(r => r.json()).then(d => setLeagues(d.leagues || []))
     fetch('/patches').then(r => r.json()).then(d => setPatches(d.patches || []))
     fetch('/champions').then(r => r.json()).then(d => setChampions(d.champions || []))
+    fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+      .then(r => r.json()).then(v => initDDVersion(v[0])).catch(() => {})
   }, [])
 
   const handleStart = (config) => {

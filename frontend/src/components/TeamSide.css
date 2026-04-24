@@ -44,12 +44,13 @@
 
 .ban-slot {
   flex: 1;
-  height: 32px;
+  height: 36px;
   border: 1px dashed #1e2d40;
   border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   cursor: pointer;
   position: relative;
   background: #050d17;
@@ -59,13 +60,28 @@
 
 .ban-slot:hover       { border-color: #3a4a5c; }
 .ban-slot.active      { border-color: #c8aa6e; border-style: solid; box-shadow: 0 0 8px #c8aa6e33; }
-.ban-slot.filled      { background: #0a1520; border-style: solid; border-color: #3d1a1a; }
+.ban-slot.filled      { background: #0a0d12; border-style: solid; border-color: #2a1a1a; }
 
-.ban-name {
-  font-size: 0.62rem;
-  color: #785a28;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+/* Ban champion icon */
+.ban-champ-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  object-fit: cover;
+  object-position: center top;
+  filter: grayscale(80%) brightness(0.55);
+  flex-shrink: 0;
+  transition: filter 0.15s;
+}
+
+.ban-slot:hover .ban-champ-icon { filter: grayscale(60%) brightness(0.65); }
+
+.champ-img-fallback.ban-champ-icon {
+  font-size: 0.48rem;
+  color: #506070;
+  background: #0a1520;
+  border: 1px solid #1e2d40;
+  letter-spacing: 0;
 }
 
 .ban-empty {
@@ -82,7 +98,7 @@
 }
 
 .pick-slot {
-  min-height: 64px;
+  min-height: 66px;
   border: 1px solid #1e2d40;
   border-radius: 4px;
   display: flex;
@@ -92,42 +108,73 @@
   cursor: pointer;
   background: #050d17;
   position: relative;
-  transition: all 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
   overflow: visible;
 }
 
+/* Left accent line */
 .pick-slot::before {
   content: '';
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 3px;
   border-radius: 4px 0 0 4px;
+  z-index: 3;
 }
 
 .pick-slot.blue::before { background: #1a4a7a; }
 .pick-slot.red::before  { background: #7a1a1a; }
 
-.pick-slot:hover       { border-color: #2a3a4c; background: #071018; }
-.pick-slot.active      { border-color: #c8aa6e; box-shadow: 0 0 10px #c8aa6e22; }
-.pick-slot.filled      { background: #091528; }
-.pick-slot.filled.blue { border-color: #1e3f6e; }
-.pick-slot.filled.red  { border-color: #6e1e1e; }
+.pick-slot:hover       { border-color: #2a3a4c; }
+.pick-slot.active      { border-color: #c8aa6e; box-shadow: 0 0 12px #c8aa6e22; }
+.pick-slot.filled.blue { border-color: #1e4a7a; }
+.pick-slot.filled.red  { border-color: #7a1e1e; }
 
-/* ── Avatar ─────────────────────────────────────────────── */
-.champ-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+/* ── Filled pick slot: cinematic art ────────────────────── */
+.pick-slot.filled {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 700;
-  flex-shrink: 0;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  min-height: 88px;
+  overflow: hidden;
+  gap: 0;
 }
 
-.champ-avatar.blue { background: #0f3460; color: #7ec8e3; border: 2px solid #1e5a9a; }
-.champ-avatar.red  { background: #3d0c11; color: #ff8a9a; border: 2px solid #7a1e2a; }
+/* Loading screen art — fills entire slot as background */
+.pick-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center 8%;
+  filter: brightness(0.5);
+  transition: filter 0.25s ease, background-position 0.4s ease;
+  will-change: filter;
+  pointer-events: none;
+}
+
+.pick-slot:hover .pick-art       { filter: brightness(0.65); background-position: center 12%; }
+.pick-slot.active .pick-art      { filter: brightness(0.72); }
+.pick-slot.draft-current .pick-art { filter: brightness(0.78); }
+
+/* Gradient + content layer */
+.pick-overlay {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 6px 8px 8px 11px;
+  min-height: 88px;
+  background: linear-gradient(
+    to top,
+    rgba(5,13,23,0.94) 0%,
+    rgba(5,13,23,0.65) 48%,
+    transparent 100%
+  );
+}
 
 .pick-info {
   display: flex;
@@ -137,12 +184,14 @@
 }
 
 .pick-champ {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #c8aa6e;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e8d5a8;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+  letter-spacing: 0.3px;
 }
 
 .pick-lane-tag {
@@ -150,10 +199,11 @@
   font-weight: 700;
   letter-spacing: 0.5px;
   margin-top: 2px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
 
-.pick-lane-tag.blue { color: #4a9fdc; }
-.pick-lane-tag.red  { color: #e84057; }
+.pick-lane-tag.blue { color: #7ec8e3; }
+.pick-lane-tag.red  { color: #ff8a9a; }
 
 /* Empty slot */
 .pick-empty-row {
@@ -199,8 +249,8 @@
   width: 22px;
   height: 22px;
   border-radius: 3px;
-  border: 1px solid #1e2d40;
-  background: #0a1520;
+  border: 1px solid transparent;
+  background: rgba(10,21,40,0.7);
   font-size: 0.75rem;
   cursor: pointer;
   display: flex;
@@ -218,13 +268,13 @@
 
 .lane-btn.sel-blue {
   border-color: #4a9fdc;
-  background: #0f3460;
+  background: rgba(15,52,96,0.9);
   box-shadow: 0 0 4px #4a9fdc44;
 }
 
 .lane-btn.sel-red {
   border-color: #e84057;
-  background: #3d0c11;
+  background: rgba(61,12,17,0.9);
   box-shadow: 0 0 4px #e8405744;
 }
 
@@ -260,7 +310,7 @@
 .remove-btn {
   background: none;
   border: none;
-  color: #3a4a5c;
+  color: rgba(58,74,92,0.9);
   font-size: 1rem;
   cursor: pointer;
   line-height: 1;
@@ -268,6 +318,7 @@
   border-radius: 3px;
   transition: color 0.1s;
   flex-shrink: 0;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
 
 .remove-btn:hover { color: #c8aa6e; }

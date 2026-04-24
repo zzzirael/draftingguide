@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { detectArchetype } from './champion-archetypes'
+import ChampImg from './ChampImg'
 import './AnalysisScreen.css'
 
 const ROLES = [
@@ -45,6 +46,7 @@ function ChampSlot({ value, role, allChampions, usedChampions, side, onChange, o
       <div className="cs-champ">
         {value ? (
           <div className="cs-filled">
+            <ChampImg name={value} className="cs-champ-img" />
             {role && <span className="cs-role-badge">{ROLE_MAP[role]?.icon}</span>}
             <span className="cs-name">{value}</span>
             <button className="cs-clear" onClick={clear}>×</button>
@@ -63,7 +65,10 @@ function ChampSlot({ value, role, allChampions, usedChampions, side, onChange, o
             {open && options.length > 0 && (
               <div className="cs-dropdown">
                 {options.map(c => (
-                  <div key={c} className="cs-opt" onMouseDown={() => select(c)}>{c}</div>
+                  <div key={c} className="cs-opt" onMouseDown={() => select(c)}>
+                    <ChampImg name={c} className="cs-opt-icon" />
+                    {c}
+                  </div>
                 ))}
               </div>
             )}
@@ -146,8 +151,10 @@ function SynergyPanel({ synergies, side }) {
         return (
           <div key={i} className="an-syn-row">
             <span className="an-syn-pair">
+              <ChampImg name={s.champion_a} className="an-syn-icon" />
               {s.champion_a}
               <span className="an-syn-plus">+</span>
+              <ChampImg name={s.champion_b} className="an-syn-icon" />
               {s.champion_b}
             </span>
             <div className="an-syn-bar-wrap">
@@ -181,9 +188,15 @@ function LaneMatchups({ matchups }) {
         return (
           <div key={m.lane} className="an-mu-row">
             <span className="an-mu-lane">{ROLE_MAP[m.lane]?.icon} {ROLE_MAP[m.lane]?.label}</span>
-            <span className="an-mu-blue">{m.blue_champion}</span>
+            <span className="an-mu-blue">
+              <ChampImg name={m.blue_champion} className="an-mu-icon" />
+              {m.blue_champion}
+            </span>
             <span className="an-mu-vs">vs</span>
-            <span className="an-mu-red">{m.red_champion}</span>
+            <span className="an-mu-red">
+              <ChampImg name={m.red_champion} className="an-mu-icon" />
+              {m.red_champion}
+            </span>
             {bp != null ? (
               <>
                 <div className="an-mu-bar">
@@ -239,14 +252,22 @@ function CounterMatrix({ matrix, bluePicks, redPicks }) {
           <tr>
             <th className="an-matrix-corner">Azul ↓ / Verm →</th>
             {validRed.map(c => (
-              <th key={c} className="an-matrix-col-head">{c}</th>
+              <th key={c} className="an-matrix-col-head" title={c}>
+                <ChampImg name={c} className="an-matrix-icon" />
+                <span className="an-matrix-head-name">{c}</span>
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
           {matrix.map((row, ri) => (
             <tr key={ri}>
-              <td className="an-matrix-row-head">{row[0]?.blue_champion}</td>
+              <td className="an-matrix-row-head">
+                <div className="an-matrix-row-inner">
+                  <ChampImg name={row[0]?.blue_champion} className="an-matrix-icon" />
+                  {row[0]?.blue_champion}
+                </div>
+              </td>
               {row.map((cell, ci) => (
                 <td
                   key={ci}
@@ -286,7 +307,10 @@ function PickOrderStats({ champion, league, patch }) {
 
   return (
     <div className="an-pick-order">
-      <div className="an-po-title">Draft Order — {data.champion}</div>
+      <div className="an-po-header">
+        <ChampImg name={data.champion} className="an-po-champ-img" />
+        <div className="an-po-title">{data.champion}</div>
+      </div>
       {data.first_pick_rate != null && (
         <div className="an-po-first">
           First-pick rate: <strong>{Math.round(data.first_pick_rate * 100)}%</strong>

@@ -213,12 +213,49 @@
   overflow: hidden;
 }
 .cs-opt {
-  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
   font-size: 0.82rem;
   color: #a0a8b8;
   cursor: pointer;
 }
 .cs-opt:hover { background: #1e3a5a; color: #c8aa6e; }
+
+/* Champion image in filled ChampSlot */
+.cs-champ-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  object-fit: cover;
+  object-position: center top;
+  flex-shrink: 0;
+  background: #0f1f33;
+}
+
+.champ-img-fallback.cs-champ-img {
+  font-size: 0.5rem;
+  color: #c8aa6e;
+  border: 1px solid #3a2a0a;
+}
+
+/* Icon in dropdown option */
+.cs-opt-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  object-fit: cover;
+  object-position: center top;
+  flex-shrink: 0;
+  background: #0f1f33;
+}
+
+.champ-img-fallback.cs-opt-icon {
+  font-size: 0.42rem;
+  color: #4a9fdc;
+  border: 1px solid #1e3f6e;
+}
 
 /* ── Results ─────────────────────────────────────────────── */
 .an-results {
@@ -384,8 +421,8 @@
   flex-shrink: 0;
 }
 
-.an-mu-blue { font-size: 0.82rem; color: #4a9fdc; font-weight: 600; min-width: 100px; }
-.an-mu-red  { font-size: 0.82rem; color: #e84057; font-weight: 600; min-width: 100px; text-align: right; }
+.an-mu-blue { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; color: #4a9fdc; font-weight: 600; min-width: 110px; }
+.an-mu-red  { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; color: #e84057; font-weight: 600; min-width: 110px; }
 .an-mu-vs   { font-size: 0.65rem; color: #3a4a5c; flex-shrink: 0; }
 
 .an-mu-bar {
@@ -432,13 +469,14 @@
 }
 
 .an-syn-pair {
-  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.73rem;
   color: #a0a8b8;
   flex: 1;
   min-width: 0;
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .an-syn-plus {
@@ -507,16 +545,19 @@
 .an-matrix-col-head {
   background: #100515;
   color: #e84057;
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 700;
+  vertical-align: middle;
+  padding: 5px 7px;
 }
 
 .an-matrix-row-head {
   background: #050f20;
   color: #4a9fdc;
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-align: left;
+  padding: 5px 7px;
 }
 
 .an-matrix-cell {
@@ -605,3 +646,99 @@
 .an-empty-icon { font-size: 2rem; opacity: 0.3; }
 .an-empty p    { font-size: 0.82rem; text-align: center; line-height: 1.6; }
 .an-empty-sub  { font-size: 0.7rem !important; }
+
+/* ── Champion icons (shared across analysis screen) ──────── */
+
+/* Lane matchup champion icon */
+.an-mu-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center top;
+  flex-shrink: 0;
+  background: #0f1f33;
+}
+
+.champ-img-fallback.an-mu-icon {
+  font-size: 0.38rem;
+  color: #a0a8b8;
+  border: 1px solid #1e3f6e;
+}
+
+/* Synergy pair icons */
+.an-syn-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  object-fit: cover;
+  object-position: center top;
+  flex-shrink: 0;
+  background: #0f1f33;
+}
+
+.champ-img-fallback.an-syn-icon {
+  font-size: 0.32rem;
+  color: #a0a8b8;
+  border: 1px solid #1e3f6e;
+}
+
+/* Counter matrix icon (column + row headers) */
+.an-matrix-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  background: #0f1f33;
+}
+
+.champ-img-fallback.an-matrix-icon {
+  font-size: 0.42rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.an-matrix-head-name {
+  font-size: 0.6rem;
+  display: block;
+  margin-top: 2px;
+  max-width: 54px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.an-matrix-row-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Pick order champion image */
+.an-po-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.an-po-champ-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  object-fit: cover;
+  object-position: center top;
+  flex-shrink: 0;
+  background: #0f1f33;
+  border: 1px solid #1e3f6e;
+}
+
+.champ-img-fallback.an-po-champ-img {
+  font-size: 0.6rem;
+  color: #c8aa6e;
+  border: 1px solid #3a2a0a;
+}

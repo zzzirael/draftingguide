@@ -381,9 +381,9 @@
 }
 
 .mini-avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
   background: #0f1f33;
   border: 1px solid #1e3f6e;
   display: flex;
@@ -394,6 +394,8 @@
   color: #4a9fdc;
   text-transform: uppercase;
   flex-shrink: 0;
+  object-fit: cover;
+  object-position: center top;
 }
 
 .mini-info {
@@ -506,9 +508,9 @@
 }
 
 .ban-avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
   background: #1f0f0f;
   border: 1px solid #6e1e1e;
   display: flex;
@@ -519,6 +521,9 @@
   color: #e84057;
   text-transform: uppercase;
   flex-shrink: 0;
+  object-fit: cover;
+  object-position: center top;
+  filter: brightness(0.85);
 }
 
 .ban-info {
@@ -613,3 +618,43 @@
 }
 
 .counter-picks { display: flex; flex-direction: column; gap: 2px; }
+
+/* ── Counter enemy icon ──────────────────────────────────── */
+.counter-enemy-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center top;
+  flex-shrink: 0;
+  border: 1px solid #6e1e1e;
+  background: #1f0808;
+}
+
+.champ-img-fallback.counter-enemy-icon {
+  font-size: 0.45rem;
+  color: #e84057;
+}
+
+/* ── Opp comp alert champion icon ───────────────────────── */
+.occ-champ {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.occ-champ-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center top;
+  flex-shrink: 0;
+}
+
+.champ-img-fallback.occ-champ-icon {
+  font-size: 0.35rem;
+  color: #a06070;
+  background: #1a0a10;
+  border: 1px solid #5a1e25;
+}

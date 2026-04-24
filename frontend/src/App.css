@@ -12,3 +12,16 @@ body {
   flex-direction: column;
   min-height: 100vh;
 }
+
+/* ── Champion image fallback (initials when ddragon img unavailable) ── */
+.champ-img-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  text-transform: uppercase;
+  user-select: none;
+  flex-shrink: 0;
+  overflow: hidden;
+  font-size: 0.55rem;
+}

@@ -1,3 +1,5 @@
+import { champLoadingUrl } from '../utils/ddragon'
+import ChampImg from './ChampImg'
 import './TeamSide.css'
 
 const LANE_OPTIONS = [
@@ -9,15 +11,6 @@ const LANE_OPTIONS = [
 ]
 
 const LANE_MAP = Object.fromEntries(LANE_OPTIONS.map(l => [l.key, l]))
-
-function ChampAvatar({ name, side }) {
-  if (!name) return null
-  return (
-    <div className={`champ-avatar ${side}`} title={name}>
-      <span>{name.slice(0, 2).toUpperCase()}</span>
-    </div>
-  )
-}
 
 function LanePicker({ value, onChange, side }) {
   return (
@@ -83,7 +76,7 @@ export default function TeamSide({
               {num && !bans[i] && <span className="slot-order-num">{num}</span>}
               {bans[i] ? (
                 <>
-                  <span className="ban-name">{bans[i].slice(0, 5)}</span>
+                  <ChampImg name={bans[i]} className="ban-champ-icon" />
                   <button className="remove-btn" onClick={e => { e.stopPropagation(); onRemove('ban', i) }}>×</button>
                 </>
               ) : (
@@ -115,17 +108,24 @@ export default function TeamSide({
 
               {champ ? (
                 <>
-                  <ChampAvatar name={champ} side={side} />
-                  <div className="pick-info">
-                    <span className="pick-champ">{champ}</span>
-                    {laneInfo && (
-                      <span className={`pick-lane-tag ${side}`}>
-                        {laneInfo.icon} {laneInfo.label}
-                      </span>
-                    )}
+                  {/* Cinematic loading art background */}
+                  <div
+                    className="pick-art"
+                    style={{ backgroundImage: `url(${champLoadingUrl(champ)})` }}
+                  />
+                  {/* Gradient overlay + content */}
+                  <div className="pick-overlay">
+                    <div className="pick-info">
+                      <span className="pick-champ">{champ}</span>
+                      {laneInfo && (
+                        <span className={`pick-lane-tag ${side}`}>
+                          {laneInfo.icon} {laneInfo.label}
+                        </span>
+                      )}
+                    </div>
+                    <LanePicker value={lane} onChange={v => onLaneChange(i, v)} side={side} />
+                    <button className="remove-btn" onClick={e => { e.stopPropagation(); onRemove('pick', i) }}>×</button>
                   </div>
-                  <LanePicker value={lane} onChange={v => onLaneChange(i, v)} side={side} />
-                  <button className="remove-btn" onClick={e => { e.stopPropagation(); onRemove('pick', i) }}>×</button>
                 </>
               ) : (
                 <div className="pick-empty-row">

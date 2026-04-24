@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { detectArchetype, TAG_META } from './champion-archetypes'
+import ChampImg from './ChampImg'
 import './SuggestionPanel.css'
 
 const LANE_LABELS = { top: 'Top', jng: 'Jng', mid: 'Mid', bot: 'Bot', sup: 'Sup' }
@@ -79,7 +80,8 @@ function OppCompAlert({ alerts }) {
                   key={c}
                   className={`occ-champ ${a.matched.includes(c) ? 'occ-confirmed' : 'occ-pending'}`}
                 >
-                  {c}{a.matched.includes(c) ? ' ✓' : ' ?'}
+                  <ChampImg name={c} className="occ-champ-icon" />
+                  {c.split(' ')[0]}{a.matched.includes(c) ? ' ✓' : ' ?'}
                 </span>
               ))}
             </div>
@@ -137,7 +139,7 @@ function MiniChamp({ champion, winProb, delta, primaryPosition, inPool, onClick 
       onClick={() => onClick?.(champion)}
       title={`${champion} — ${pct}% win rate${inPool ? ' ✓ no pool' : ''}`}
     >
-      <div className="mini-avatar">{champion.slice(0, 2)}</div>
+      <ChampImg name={champion} className="mini-avatar" />
       <div className="mini-info">
         <div className="mini-top-row">
           <span className="mini-name">{champion}</span>
@@ -186,7 +188,7 @@ function BanSuggestions({ banSuggestions, allPoolSet, onBan }) {
             onClick={() => onBan?.(s.champion)}
             title={`Banir ${s.champion} — evita queda de ${dropPct}% na sua WP`}
           >
-            <div className="ban-avatar">{s.champion.slice(0, 2)}</div>
+            <ChampImg name={s.champion} className="ban-avatar" />
             <div className="ban-info">
               <span className="ban-name">{s.champion}</span>
               {laneIcon && <span className="ban-lane-icon">{laneIcon}</span>}
@@ -253,8 +255,8 @@ function CounterAnalysis({ counterAnalysis, allPoolSet, onPick }) {
         <div key={vs} className="counter-row">
           <div className="counter-header">
             <span className="counter-vs-label">vs</span>
+            <ChampImg name={vs} className="counter-enemy-icon" />
             <span className="counter-enemy">{vs}</span>
-            <span className="counter-sub">— picks recomendados</span>
           </div>
           <div className="counter-picks">
             {best_picks.map(p => (

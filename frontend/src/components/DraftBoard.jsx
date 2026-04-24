@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import TeamSide from './TeamSide'
 import ChampionPool from './ChampionPool'
 import SuggestionPanel from './SuggestionPanel'
+import ChampImg from './ChampImg'
 import './DraftBoard.css'
 
 const DRAFT_ORDER = [
@@ -48,9 +49,15 @@ function MatchupBar({ items, mySide }) {
               <div className="mu-lane-icon">{LANE_ICONS[lane]}</div>
               <div className="mu-content">
                 <div className="mu-champs">
-                  <span className={`mu-champ ${isBlue ? 'mu-blue' : 'mu-red'}`}>{myChamp}</span>
+                  <span className={`mu-champ ${isBlue ? 'mu-blue' : 'mu-red'}`}>
+                    <ChampImg name={myChamp} className="mu-champ-icon" />
+                    {myChamp}
+                  </span>
                   <span className="mu-vs">vs</span>
-                  <span className={`mu-champ ${isBlue ? 'mu-red' : 'mu-blue'}`}>{oppChamp}</span>
+                  <span className={`mu-champ ${isBlue ? 'mu-red' : 'mu-blue'}`}>
+                    <ChampImg name={oppChamp} className="mu-champ-icon" />
+                    {oppChamp}
+                  </span>
                 </div>
                 {myPct != null ? (
                   <div className="mu-stats">

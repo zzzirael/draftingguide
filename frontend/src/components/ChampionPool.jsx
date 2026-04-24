@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import ChampImg from './ChampImg'
 import './ChampionPool.css'
 
 export default function ChampionPool({ champions, usedChampions, fearlessLocked = [], onSelect, activeSlot }) {
@@ -57,7 +58,7 @@ export default function ChampionPool({ champions, usedChampions, fearlessLocked 
               onClick={() => onSelect(name)}
               title={name}
             >
-              <div className="pool-avatar">{name.slice(0, 2)}</div>
+              <ChampImg name={name} className="pool-champ-img" />
               <span className="pool-name">{name}</span>
             </button>
           ))}

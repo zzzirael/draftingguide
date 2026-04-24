@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo } from 'react'
+import ChampImg from './ChampImg'
 import './MenuScreen.css'
 
 const ROLES = [
@@ -34,6 +35,7 @@ function PoolInput({ pool, allChampions, onChange }) {
     <div className="pool-input-wrap">
       {pool.map(c => (
         <span key={c} className="pool-chip">
+          <ChampImg name={c} className="chip-icon" />
           {c}
           <button className="chip-rm" onMouseDown={() => onChange(pool.filter(x => x !== c))}>×</button>
         </span>
@@ -51,7 +53,10 @@ function PoolInput({ pool, allChampions, onChange }) {
         {open && options.length > 0 && (
           <div className="pool-dropdown">
             {options.map(c => (
-              <div key={c} className="pool-opt" onMouseDown={() => add(c)}>{c}</div>
+              <div key={c} className="pool-opt" onMouseDown={() => add(c)}>
+                <ChampImg name={c} className="pool-opt-icon" />
+                {c}
+              </div>
             ))}
           </div>
         )}

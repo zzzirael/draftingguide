@@ -364,11 +364,29 @@
 }
 
 .mu-champ {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 80px;
+  max-width: 110px;
+}
+
+.mu-champ-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: cover;
+  object-position: center top;
+  flex-shrink: 0;
+  background: #0f1f33;
+}
+
+.champ-img-fallback.mu-champ-icon {
+  font-size: 0.38rem;
+  border: 1px solid #1e3f6e;
 }
 
 .mu-blue { color: #4a9fdc; }
