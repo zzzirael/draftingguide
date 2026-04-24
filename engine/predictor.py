@@ -228,6 +228,96 @@ class DraftPredictor:
         return results
 
 
+    def suggest_bans(
+        self,
+        available_champions: list[str],
+        state: DraftState,
+        top_n: int = 10,
+    ) -> list[dict]:
+        """
+        Return available champions ranked by threat to allied picks.
+
+        When allies exist: uses counter_matrix to find what beats each ally.
+        When no allies yet: returns highest win-rate champions in current meta.
+        """
+        used  = set(state.allied_picks) | set(state.banned) | set(state.enemy_picks)
+        av_set = set(available_champions)
+
+        try:
+            conn = sqlite3.connect(self._db_path)
+
+            if state.allied_picks:
+                # Phase 2+: champions that counter our specific picks
+                threat_scores: dict[str, list[float]] = {}
+
+                for ally in state.allied_picks:
+                    def _q(ally=ally, lg=None, pm=None, min_g=5):
+                        clauses = ["vs_champion = ?", f"games >= {min_g}"]
+                        params  = [ally]
+                        if lg: clauses.append("league = ?");      params.append(lg)
+                        if pm: clauses.append("patch_major = ?"); params.append(pm)
+                        return conn.execute(f"""
+                            SELECT champion, wins, games FROM counter_matrix
+                            WHERE {' AND '.join(clauses)}
+                            ORDER BY CAST(wins AS FLOAT)/games DESC LIMIT 25
+                        """, params).fetchall()
+
+                    rows = _q(lg=state.league, pm=state.patch_major)
+                    if not rows and state.patch_major: rows = _q(lg=state.league)
+                    if not rows:                       rows = _q(min_g=3)
+
+                    for champ, wins, games in rows:
+                        wr = wins / games if games else 0.5
+                        if wr <= 0.50: continue
+                        threat_scores.setdefault(champ, []).append(wr - 0.5)
+
+                conn.close()
+                results = []
+                for champ, threats in threat_scores.items():
+                    if champ in used or champ not in av_set: continue
+                    avg = sum(threats) / len(threats)
+                    results.append({
+                        'champion':        champ,
+                        'threat_delta':    -round(avg, 4),
+                        'primary_position': self._champ_positions.get(champ, ['flex'])[0],
+                    })
+
+            else:
+                # Phase 1 (no allied picks yet): strongest champions in current meta
+                def _qg(lg=None, pm=None, min_g=15):
+                    clauses = [f"games >= {min_g}"]
+                    params  = []
+                    if lg: clauses.append("league = ?");      params.append(lg)
+                    if pm: clauses.append("patch_major = ?"); params.append(pm)
+                    return conn.execute(f"""
+                        SELECT champion, SUM(wins) w, SUM(games) g
+                        FROM counter_matrix
+                        WHERE {' AND '.join(clauses)}
+                        GROUP BY champion HAVING g >= {min_g}
+                        ORDER BY CAST(w AS FLOAT)/g DESC LIMIT {top_n * 3}
+                    """, params).fetchall()
+
+                rows = _qg(lg=state.league, pm=state.patch_major)
+                if not rows and state.patch_major: rows = _qg(lg=state.league)
+                if not rows:                       rows = _qg(min_g=10)
+                conn.close()
+
+                results = []
+                for champ, wins, games in rows:
+                    if champ in used or champ not in av_set: continue
+                    wr = wins / games if games else 0.5
+                    results.append({
+                        'champion':        champ,
+                        'threat_delta':    -round(wr - 0.5, 4),
+                        'primary_position': self._champ_positions.get(champ, ['flex'])[0],
+                    })
+
+        except Exception:
+            return []
+
+        results.sort(key=lambda x: x['threat_delta'])
+        return results[:top_n]
+
     def get_matchup_winrate(
         self,
         champion: str,

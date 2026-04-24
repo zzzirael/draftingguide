@@ -129,6 +129,49 @@ function MiniChamp({ champion, winProb, delta, primaryPosition, inPool, onClick 
   )
 }
 
+// ── Ban suggestions ───────────────────────────────────────────────────────────
+
+function BanSuggestions({ banSuggestions, allPoolSet, onBan }) {
+  if (!banSuggestions?.length) return (
+    <div className="empty-msg">Adicione picks para ver quais campeões banir.</div>
+  )
+  return (
+    <div className="ban-suggestions">
+      <div className="ban-hint">
+        {banSuggestions.length > 0
+          ? 'Esses campeões são os maiores counters dos seus picks:'
+          : 'Faça picks para ver sugestões de ban contextuais.'}
+      </div>
+      {banSuggestions.map(s => {
+        const dropPct  = Math.abs(Math.round(s.threat_delta * 100))
+        const laneIcon = LANE_ICONS[s.primary_position]
+        const inPool   = allPoolSet?.has(s.champion)
+        return (
+          <div
+            key={s.champion}
+            className={`ban-card${inPool ? ' ban-in-pool' : ''}`}
+            onClick={() => onBan?.(s.champion)}
+            title={`Banir ${s.champion} — evita queda de ${dropPct}% na sua WP`}
+          >
+            <div className="ban-avatar">{s.champion.slice(0, 2)}</div>
+            <div className="ban-info">
+              <span className="ban-name">{s.champion}</span>
+              {laneIcon && <span className="ban-lane-icon">{laneIcon}</span>}
+              {inPool && <span className="ban-pool-note">✓ pool</span>}
+            </div>
+            <div className="ban-threat">
+              <span className="ban-delta">-{dropPct}%</span>
+              <div className="ban-bar">
+                <div className="ban-bar-fill" style={{ width: `${Math.min(dropPct * 3, 100)}%` }} />
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Lane suggestions ──────────────────────────────────────────────────────────
 
 function LaneSuggestions({ byLane, activePosition, poolByLane, onPick }) {
@@ -202,16 +245,17 @@ function CounterAnalysis({ counterAnalysis, allPoolSet, onPick }) {
 // ── Main panel ────────────────────────────────────────────────────────────────
 
 export default function SuggestionPanel({
-  winProbability, suggestions, byLane, counterAnalysis,
+  winProbability, suggestions, byLane, counterAnalysis, banSuggestions,
   loading, mySide, alliedPicks, enemyPicks, activeSlot, activePosition,
   myTeamPlayers,
-  onPickSuggestion,
+  onPickSuggestion, onBanSuggestion,
 }) {
-  const hasAllied  = alliedPicks.filter(Boolean).length > 0
-  const hasEnemy   = enemyPicks.filter(Boolean).length  > 0
-  const hasAny     = hasAllied || hasEnemy
-  const hasLanes   = byLane && Object.values(byLane).some(arr => arr?.length > 0)
+  const hasAllied   = alliedPicks.filter(Boolean).length > 0
+  const hasEnemy    = enemyPicks.filter(Boolean).length  > 0
+  const hasAny      = hasAllied || hasEnemy
+  const hasLanes    = byLane && Object.values(byLane).some(arr => arr?.length > 0)
   const hasCounters = counterAnalysis?.length > 0
+  const isBanPhase  = activeSlot?.type === 'ban'
 
   // Pool lookups
   const poolByLane = useMemo(() => {
@@ -253,26 +297,44 @@ export default function SuggestionPanel({
 
       {hasAny && (
         <div className="panel-body">
+          {/* Left col: ban suggestions during ban phase, pick suggestions otherwise */}
           <div className="panel-col">
-            <div className="section-title">
-              Sugestões por Lane
-              {activePosition && (
-                <span className="active-pos-hint">
-                  {' '}— {LANE_ICONS[activePosition]} {LANE_LABELS[activePosition]} em foco
-                </span>
-              )}
-            </div>
-            {hasLanes
-              ? <LaneSuggestions
-                  byLane={byLane}
-                  activePosition={activePosition}
-                  poolByLane={poolByLane}
-                  onPick={onPickSuggestion}
+            {isBanPhase ? (
+              <>
+                <div className="section-title ban-title">
+                  🚫 Sugestões de Ban
+                  <span className="active-pos-hint"> — fase de banimentos</span>
+                </div>
+                <BanSuggestions
+                  banSuggestions={banSuggestions}
+                  allPoolSet={allPoolSet}
+                  onBan={onBanSuggestion}
                 />
-              : <div className="empty-msg">Aguardando dados...</div>
-            }
+              </>
+            ) : (
+              <>
+                <div className="section-title">
+                  Sugestões por Lane
+                  {activePosition && (
+                    <span className="active-pos-hint">
+                      {' '}— {LANE_ICONS[activePosition]} {LANE_LABELS[activePosition]} em foco
+                    </span>
+                  )}
+                </div>
+                {hasLanes
+                  ? <LaneSuggestions
+                      byLane={byLane}
+                      activePosition={activePosition}
+                      poolByLane={poolByLane}
+                      onPick={onPickSuggestion}
+                    />
+                  : <div className="empty-msg">Aguardando dados...</div>
+                }
+              </>
+            )}
           </div>
 
+          {/* Right col: counter analysis (always) */}
           <div className="panel-col">
             {hasCounters
               ? <CounterAnalysis

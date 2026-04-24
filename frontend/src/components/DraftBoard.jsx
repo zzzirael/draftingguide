@@ -120,6 +120,7 @@ export default function DraftBoard({ champions, seriesConfig, seriesState, onGam
   const [suggestions,     setSuggestions]     = useState([])
   const [byLane,          setByLane]          = useState({})
   const [counterAnalysis, setCounterAnalysis] = useState([])
+  const [banSuggestions,  setBanSuggestions]  = useState([])
   const [winProbability,  setWinProbability]  = useState(null)
   const [loading,         setLoading]         = useState(false)
   const [activePosition,  setActivePosition]  = useState(null)
@@ -200,7 +201,8 @@ export default function DraftBoard({ champions, seriesConfig, seriesState, onGam
     const bans   = [...bb, ...rb, ...fearlessUsed].filter(Boolean)
 
     if (allied.length === 0 && enemy.length === 0) {
-      setSuggestions([]); setByLane({}); setCounterAnalysis([]); setWinProbability(null)
+      setSuggestions([]); setByLane({}); setCounterAnalysis([])
+      setBanSuggestions([]); setWinProbability(null)
       return
     }
 
@@ -231,9 +233,11 @@ export default function DraftBoard({ champions, seriesConfig, seriesState, onGam
       setSuggestions(data.suggestions || [])
       setByLane(data.by_lane || {})
       setCounterAnalysis(data.counter_analysis || [])
+      setBanSuggestions(data.ban_suggestions || [])
       setWinProbability(data.current_win_probability ?? null)
     } catch {
-      setSuggestions([]); setByLane({}); setCounterAnalysis([]); setWinProbability(null)
+      setSuggestions([]); setByLane({}); setCounterAnalysis([])
+      setBanSuggestions([]); setWinProbability(null)
     } finally {
       setLoading(false)
     }
@@ -310,8 +314,9 @@ export default function DraftBoard({ champions, seriesConfig, seriesState, onGam
     setBluePickLanes(EMPTY_LANES()); setRedPickLanes(EMPTY_LANES())
     setDraftStep(0);             setActiveSlot(DRAFT_ORDER[0])
     setSuggestions([]);          setByLane({})
-    setCounterAnalysis([]);      setWinProbability(null)
-    setActivePosition(null);     setGameWinner(null)
+    setCounterAnalysis([]);      setBanSuggestions([])
+    setWinProbability(null);     setActivePosition(null)
+    setGameWinner(null)
     setMatchupData({});          lastFetchedMatchup.current = {}
   }
 
@@ -501,6 +506,7 @@ export default function DraftBoard({ champions, seriesConfig, seriesState, onGam
         suggestions={suggestions}
         byLane={byLane}
         counterAnalysis={counterAnalysis}
+        banSuggestions={banSuggestions}
         loading={loading}
         mySide={mySide}
         alliedPicks={alliedPicks}
@@ -509,6 +515,7 @@ export default function DraftBoard({ champions, seriesConfig, seriesState, onGam
         activePosition={activePosition}
         myTeamPlayers={seriesConfig?.myTeam?.players ?? []}
         onPickSuggestion={handlePickSuggestion}
+        onBanSuggestion={selectChampion}
       />
     </div>
   )

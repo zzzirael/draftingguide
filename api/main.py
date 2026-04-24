@@ -143,12 +143,15 @@ def suggest_ml(req: DraftRequest):
                 "best_picks": counters,
             })
 
+    ban_suggestions = predictor.suggest_bans(available, state, top_n=10)
+
     return {
         "current_win_probability": current_prob,
         "active_position":         req.active_position,
         "suggestions":             suggestions,
         "by_lane":                 by_lane,
         "counter_analysis":        counter_analysis,
+        "ban_suggestions":         ban_suggestions,
     }
 
 
