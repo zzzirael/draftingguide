@@ -57,6 +57,39 @@ function ArchetypeBar({ alliedPicks }) {
   )
 }
 
+// ── Opponent comp alert ───────────────────────────────────────────────────────
+
+function OppCompAlert({ alerts }) {
+  if (!alerts?.length) return null
+  return (
+    <div className="opp-comp-alerts">
+      {alerts.map((a, i) => {
+        const complete = a.matched.length === a.champions.length
+        return (
+          <div key={i} className={`opp-comp-alert${complete ? ' occ-complete' : ''}`}>
+            <div className="occ-header">
+              <span className="occ-warn">{complete ? '🚨' : '⚠'}</span>
+              <span className="occ-label">PADRÃO INIMIGO</span>
+              <span className="occ-name">{a.name}</span>
+              <span className="occ-count">{a.matched.length}/{a.champions.length}</span>
+            </div>
+            <div className="occ-champs">
+              {a.champions.map(c => (
+                <span
+                  key={c}
+                  className={`occ-champ ${a.matched.includes(c) ? 'occ-confirmed' : 'occ-pending'}`}
+                >
+                  {c}{a.matched.includes(c) ? ' ✓' : ' ?'}
+                </span>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Win probability bar ───────────────────────────────────────────────────────
 
 function WinBar({ probability, mySide }) {
@@ -246,6 +279,7 @@ function CounterAnalysis({ counterAnalysis, allPoolSet, onPick }) {
 
 export default function SuggestionPanel({
   winProbability, suggestions, byLane, counterAnalysis, banSuggestions,
+  oppCompAlerts,
   loading, mySide, alliedPicks, enemyPicks, activeSlot, activePosition,
   myTeamPlayers,
   onPickSuggestion, onBanSuggestion,
@@ -279,6 +313,8 @@ export default function SuggestionPanel({
       </div>
 
       <ArchetypeBar alliedPicks={alliedPicks} />
+
+      <OppCompAlert alerts={oppCompAlerts} />
 
       {!hasAny && (
         <div className="panel-idle">

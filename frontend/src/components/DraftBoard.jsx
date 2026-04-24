@@ -174,6 +174,22 @@ export default function DraftBoard({ champions, seriesConfig, seriesState, onGam
   const enemyPicks    = mySide === 'blue' ? redPicks  : bluePicks
   const usedChampions = [...bluePicks, ...redPicks, ...blueBans, ...redBans, ...fearlessUsed].filter(Boolean)
 
+  // ── Opponent comp pattern detection ───────────────────────────────────────
+  const oppCompAlerts = useMemo(() => {
+    const comps = seriesConfig?.oppTeam?.comps
+    if (!comps?.length) return []
+    const picked = enemyPicks.filter(Boolean)
+    if (!picked.length) return []
+    return comps
+      .map(comp => {
+        const matched   = comp.champions.filter(c => picked.includes(c))
+        const remaining = comp.champions.filter(c => !picked.includes(c))
+        return { name: comp.name, champions: comp.champions, matched, remaining }
+      })
+      .filter(r => r.matched.length >= 2 || (r.champions.length <= 3 && r.matched.length >= 1))
+      .sort((a, b) => b.matched.length - a.matched.length)
+  }, [enemyPicks, seriesConfig])
+
   const currentDraftEntry = DRAFT_ORDER[draftStep] ?? null
   const isDraftComplete   = draftStep >= DRAFT_ORDER.length
 
@@ -507,6 +523,7 @@ export default function DraftBoard({ champions, seriesConfig, seriesState, onGam
         byLane={byLane}
         counterAnalysis={counterAnalysis}
         banSuggestions={banSuggestions}
+        oppCompAlerts={oppCompAlerts}
         loading={loading}
         mySide={mySide}
         alliedPicks={alliedPicks}

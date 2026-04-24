@@ -4,6 +4,27 @@ Histórico de versões do app. Cada versão corresponde a um commit ou grupo de 
 
 ---
 
+## v0.7 — Perfil do Adversário
+> commit `pending` — feat: opponent comp profiling and live pattern detection
+
+### Novo
+- **Padrões de composição do adversário no MenuScreen**: na aba do adversário, nova seção "Padrões de Composição" onde o coach cadastra as comps favoritas do time inimigo antes do draft
+  - Cada padrão tem: nome (ex: "Dive", "Wombo Combo") + lista de campeões que compõem a comp
+  - Campos salvos no `localStorage` junto com o restante do config
+- **Alerta em tempo real no SuggestionPanel**: assim que ≥2 picks inimigos batem com um padrão cadastrado, um banner de alerta aparece entre a barra de arquétipo e as sugestões
+  - Mostra: nome do padrão, campeões confirmados (`✓` vermelho) e pendentes (`?` cinza), progresso (`2/4`)
+  - Pulsa em vermelho quando ativo; intensifica (🚨) quando todos os campeões do padrão foram confirmados
+  - Múltiplos alertas simultâneos se mais de um padrão for detectado ao mesmo tempo
+
+### Técnico
+- `MenuScreen.jsx`: novo componente `CompSection` com formulário inline (nome + `PoolInput` de campeões); integrado apenas no painel do adversário
+- `MenuScreen.css`: estilos para a seção de comps (`.comp-section`, `.comp-item`, `.comp-add-form`, etc.)
+- `DraftBoard.jsx`: `oppCompAlerts` useMemo — cruza `enemyPicks` com `seriesConfig.oppTeam.comps`; threshold: ≥2 matches (ou ≥1 para comps com ≤3 campeões)
+- `SuggestionPanel.jsx`: novo componente `OppCompAlert`; prop `oppCompAlerts` adicionada; banner renderizado entre `ArchetypeBar` e o corpo das sugestões
+- `SuggestionPanel.css`: estilos para o alerta (`.opp-comp-alert`, `.occ-header`, `.occ-confirmed`, `.occ-pending`, animação de pulso)
+
+---
+
 ## v0.6 — Ban Phase Intelligence
 > commit `df42708` — feat: ban phase suggestions using counter_matrix
 

@@ -10,7 +10,7 @@ const ROLES = [
 ]
 
 const EMPTY_PLAYERS = () => ROLES.map(r => ({ role: r.key, name: '', pool: [] }))
-const EMPTY_TEAM = () => ({ name: '', players: EMPTY_PLAYERS() })
+const EMPTY_TEAM = () => ({ name: '', players: EMPTY_PLAYERS(), comps: [] })
 
 function PoolInput({ pool, allChampions, onChange }) {
   const [query, setQuery] = useState('')
@@ -56,6 +56,69 @@ function PoolInput({ pool, allChampions, onChange }) {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Comp pattern section (opponent only) ─────────────────────────────────────
+
+function CompSection({ comps, allChampions, onChange }) {
+  const [adding,    setAdding]    = useState(false)
+  const [newName,   setNewName]   = useState('')
+  const [newChamps, setNewChamps] = useState([])
+
+  const handleSave = () => {
+    if (!newName.trim() || !newChamps.length) return
+    onChange([...comps, { name: newName.trim(), champions: newChamps }])
+    setNewName(''); setNewChamps([]); setAdding(false)
+  }
+
+  return (
+    <div className="comp-section">
+      <div className="comp-section-label">PADRÕES DE COMPOSIÇÃO</div>
+
+      {comps.length > 0 && (
+        <div className="comp-list">
+          {comps.map((comp, i) => (
+            <div key={i} className="comp-item">
+              <span className="comp-item-name">{comp.name}</span>
+              <div className="comp-item-champs">
+                {comp.champions.map(c => (
+                  <span key={c} className="comp-item-chip">{c}</span>
+                ))}
+              </div>
+              <button className="comp-rm" onClick={() => onChange(comps.filter((_, j) => j !== i))}>×</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {adding ? (
+        <div className="comp-add-form">
+          <input
+            className="comp-name-inp"
+            placeholder="Nome (ex: Dive, Wombo combo...)"
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSave()}
+            autoFocus
+          />
+          <PoolInput pool={newChamps} allChampions={allChampions} onChange={setNewChamps} />
+          <div className="comp-add-actions">
+            <button
+              className="comp-save-btn"
+              onClick={handleSave}
+              disabled={!newName.trim() || !newChamps.length}
+            >Salvar</button>
+            <button
+              className="comp-cancel-btn"
+              onClick={() => { setAdding(false); setNewName(''); setNewChamps([]) }}
+            >Cancelar</button>
+          </div>
+        </div>
+      ) : (
+        <button className="comp-add-btn" onClick={() => setAdding(true)}>+ Adicionar comp</button>
+      )}
     </div>
   )
 }
@@ -110,6 +173,14 @@ function TeamPanel({ label, isMyTeam, team, mySide, allChampions, onChange, onSi
           </div>
         ))}
       </div>
+
+      {!isMyTeam && (
+        <CompSection
+          comps={team.comps ?? []}
+          allChampions={allChampions}
+          onChange={comps => onChange({ ...team, comps })}
+        />
+      )}
     </div>
   )
 }
