@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import MenuScreen from './components/MenuScreen'
-import DraftBoard from './components/DraftBoard'
+import MenuScreen     from './components/MenuScreen'
+import DraftBoard     from './components/DraftBoard'
+import AnalysisScreen from './components/AnalysisScreen'
 import './App.css'
 
 const STORAGE_KEY = 'draft-sim-v1'
@@ -55,6 +56,18 @@ export default function App() {
         patches={patches}
         savedData={loadSaved()}
         onStart={handleStart}
+        onAnalysis={() => setScreen('analysis')}
+      />
+    )
+  }
+
+  if (screen === 'analysis') {
+    return (
+      <AnalysisScreen
+        allChampions={champions}
+        leagues={leagues}
+        patches={patches}
+        onBack={() => setScreen('menu')}
       />
     )
   }

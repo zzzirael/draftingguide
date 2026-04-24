@@ -581,3 +581,21 @@
 }
 
 .start-btn:active { transform: scale(0.98); }
+
+.analysis-btn {
+  background: #091428;
+  border: 1px solid #1e2d40;
+  color: #785a28;
+  padding: 12px 20px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.analysis-btn:hover {
+  border-color: #785a28;
+  color: #c8aa6e;
+}

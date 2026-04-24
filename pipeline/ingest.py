@@ -59,6 +59,16 @@ def init_db(db_path: str):
             wins         INTEGER,
             PRIMARY KEY (champion, vs_champion, league, patch_major)
         );
+
+        CREATE TABLE IF NOT EXISTS pick_order_stats (
+            champion    TEXT NOT NULL,
+            pick_slot   INTEGER NOT NULL,
+            league      TEXT NOT NULL DEFAULT '',
+            patch_major TEXT NOT NULL DEFAULT '',
+            wins        INTEGER DEFAULT 0,
+            games       INTEGER DEFAULT 0,
+            PRIMARY KEY (champion, pick_slot, league, patch_major)
+        );
     """)
     conn.close()
 

@@ -4,6 +4,40 @@ Histórico de versões do app. Cada versão corresponde a um commit ou grupo de 
 
 ---
 
+## v0.8 — Tela de Análise + Integração Leaguepedia
+> commit `pending` — feat: post-game draft analysis screen and Leaguepedia pick order pipeline
+
+### Novo
+- **Tela de Análise de Draft** (`⊞ Análise` no menu): tela separada para analisar composições sem ordem de draft, ideal para análise pós-jogo
+  - Dois painéis (Azul / Vermelho) com input de campeão + seletor de role por slot
+  - Auto-analisa em 350ms após qualquer mudança, sem botão explícito
+  - **Win Probability** dos dois lados via modelo ML
+  - **Arquétipos** de ambas as comps (Teamfight, Poke, Dive, etc.) com alertas de gap
+  - **Matchups de lane** com WR head-to-head quando roles estão atribuídas
+  - **Sinergias** — top 6 pares por time (via `synergy_matrix`) com barra de WR
+  - **Matrix de Counters** — grid 5×5 com WR de cada campeão azul contra cada vermelho, color-coded (verde = vantagem, vermelho = desvantagem)
+  - **Draft Order stats** — quando Leaguepedia estiver populado, mostra WR por slot (Pick 1–5) e first-pick rate por campeão
+
+- **Pipeline Leaguepedia** (`pipeline/fetch_leaguepedia.py`): busca dados de pick order da API Cargo da Leaguepedia (`PicksAndBansS7`) e popula tabela `pick_order_stats`
+  - Ativado via `python setup.py --leaguepedia` (separado do setup principal)
+  - Dados: champion × pick_slot (1–5) × liga × patch_major → wins/games
+  - Paginação automática com rate limiting (1s entre páginas)
+  - Nome de ligas extraído da `OverviewPage` (LCK, LPL, LEC, etc.)
+
+### Técnico
+- `pipeline/fetch_leaguepedia.py`: novo arquivo — fetch paginado, normalização de nomes, agregação em `pick_order_stats`
+- `pipeline/ingest.py`: `init_db` atualizado com schema da `pick_order_stats`
+- `setup.py`: flags `--leaguepedia` e `--leaguepedia-from` adicionadas
+- `engine/predictor.py`: três novos métodos — `analyze_comp()`, `_get_synergy_pairs()`, `get_pick_order_stats()`
+- `api/main.py`: endpoints `POST /analyze-comp` e `GET /draft-stats` adicionados
+- `requirements.txt`: `requests` adicionado
+- `vite.config.js`: proxy `/analyze-comp` e `/draft-stats` adicionados
+- `AnalysisScreen.jsx` + `AnalysisScreen.css`: nova tela completa (~350 linhas)
+- `App.jsx`: roteamento para `screen = 'analysis'`
+- `MenuScreen.jsx`: botão `⊞ Análise` no rodapé
+
+---
+
 ## v0.7 — Perfil do Adversário
 > commit `pending` — feat: opponent comp profiling and live pattern detection
 

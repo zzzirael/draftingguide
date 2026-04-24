@@ -185,7 +185,7 @@ function TeamPanel({ label, isMyTeam, team, mySide, allChampions, onChange, onSi
   )
 }
 
-export default function MenuScreen({ allChampions, leagues, patches, savedData, onStart }) {
+export default function MenuScreen({ allChampions, leagues, patches, savedData, onStart, onAnalysis }) {
   const [format,   setFormat]   = useState(savedData?.format   ?? 'bo3')
   const [fearless, setFearless] = useState(savedData?.fearless ?? false)
   const [mySide,   setMySide]   = useState(savedData?.mySide   ?? 'blue')
@@ -288,6 +288,9 @@ export default function MenuScreen({ allChampions, leagues, patches, savedData, 
             melhor de {totalGames} · {winsNeeded} vitória{winsNeeded > 1 ? 's' : ''} para ganhar
           </span>
         </div>
+        <button className="analysis-btn" onClick={onAnalysis}>
+          ⊞ Análise
+        </button>
         <button
           className="start-btn"
           onClick={() => onStart({ format, fearless, mySide, league, patch, myTeam, oppTeam, winsNeeded })}

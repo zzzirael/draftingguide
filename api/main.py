@@ -186,6 +186,49 @@ def win_probability(req: DraftRequest):
     return {"win_probability": prob, "loss_probability": round(1 - prob, 4)}
 
 
+@app.get("/draft-stats")
+def draft_stats(
+    champion:    str,
+    league:      Optional[str] = None,
+    patch_major: Optional[str] = None,
+):
+    predictor = get_predictor()
+    if predictor is None:
+        return {"champion": champion, "by_slot": [], "total_games": 0, "first_pick_rate": None}
+    return predictor.get_pick_order_stats(champion, league, patch_major)
+
+
+class AnalysisRequest(BaseModel):
+    blue_picks:  list[Optional[str]] = []
+    red_picks:   list[Optional[str]] = []
+    blue_roles:  list[Optional[str]] = []
+    red_roles:   list[Optional[str]] = []
+    league:      Optional[str] = None
+    patch_major: Optional[str] = None
+
+
+@app.post("/analyze-comp")
+def analyze_comp(req: AnalysisRequest):
+    predictor = get_predictor()
+    if predictor is None:
+        raise HTTPException(status_code=503, detail="Modelo ML não carregado.")
+
+    # Pad role lists to 5 elements
+    blue_roles = (req.blue_roles + [None] * 5)[:5]
+    red_roles  = (req.red_roles  + [None] * 5)[:5]
+    blue_picks = (req.blue_picks + [None] * 5)[:5]
+    red_picks  = (req.red_picks  + [None] * 5)[:5]
+
+    return predictor.analyze_comp(
+        blue_picks=blue_picks,
+        red_picks=red_picks,
+        blue_roles=blue_roles,
+        red_roles=red_roles,
+        league=req.league,
+        patch_major=req.patch_major,
+    )
+
+
 # ── Helper ────────────────────────────────────────────────────────────────────
 
 def _all_champions() -> list[str]:

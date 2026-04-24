@@ -21,8 +21,12 @@ def find_csvs():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--skip-ingest', action='store_true')
-    parser.add_argument('--skip-train',  action='store_true')
+    parser.add_argument('--skip-ingest',    action='store_true')
+    parser.add_argument('--skip-train',     action='store_true')
+    parser.add_argument('--leaguepedia',    action='store_true',
+                        help='Busca dados de draft order da Leaguepedia (requer internet)')
+    parser.add_argument('--leaguepedia-from', default='2024-01-01',
+                        help='Data mínima para buscar da Leaguepedia (padrão: 2024-01-01)')
     parser.add_argument('--lambda-decay', type=float, default=0.3,
                         help='Decaimento exponencial por patch (padrão 0.3)')
     args = parser.parse_args()
@@ -43,6 +47,12 @@ def main():
         build_synergy_matrix(DB_PATH)
         build_counter_matrix(DB_PATH)
 
+    # ── Leaguepedia pick order data ───────────────────────────────────────────
+    if args.leaguepedia:
+        print("\n[Leaguepedia] Buscando dados de pick order...")
+        from pipeline.fetch_leaguepedia import build_pick_order_stats
+        build_pick_order_stats(DB_PATH, from_date=args.leaguepedia_from)
+
     # ── Treino ML ─────────────────────────────────────────────────────────────
     if not args.skip_train:
         print("\n[ML] Treinando modelo LightGBM com patch weighting...")
@@ -50,8 +60,9 @@ def main():
         train(DB_PATH, lambda_decay=args.lambda_decay)
 
     print("\nSetup concluido!")
-    print("  API:      uvicorn api.main:app --reload")
-    print("  Frontend: cd frontend && npm run dev")
+    print("  Leaguepedia: python setup.py --skip-ingest --skip-train --leaguepedia")
+    print("  API:         uvicorn api.main:app --port 8001")
+    print("  Frontend:    cd frontend && npm run dev")
 
 
 if __name__ == "__main__":
