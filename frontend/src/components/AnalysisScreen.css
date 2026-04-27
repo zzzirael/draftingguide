@@ -633,6 +633,23 @@
 .an-po-pct   { font-size: 0.65rem; font-weight: 700; min-width: 32px; text-align: right; }
 .an-po-games { font-size: 0.58rem; color: #3a4a5c; min-width: 24px; }
 
+/* ── Error state ─────────────────────────────────────────── */
+.an-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  margin: 20px;
+  background: #1a0a0a;
+  border: 1px solid #7a1a1a;
+  border-radius: 6px;
+  color: #e84057;
+  font-size: 0.82rem;
+  max-width: 680px;
+  width: 100%;
+}
+.an-error-icon { font-size: 1.1rem; flex-shrink: 0; }
+
 /* ── Empty state ─────────────────────────────────────────── */
 .an-empty {
   display: flex;

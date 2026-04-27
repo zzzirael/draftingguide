@@ -350,6 +350,7 @@ export default function AnalysisScreen({ allChampions, leagues, patches, onBack 
   const [redRoles,  setRedRoles]  = useState(Array(5).fill(null))
   const [result,    setResult]    = useState(null)
   const [loading,   setLoading]   = useState(false)
+  const [error,     setError]     = useState(null)
   const [focusedChamp, setFocusedChamp] = useState(null)
 
   const usedChampions = [...bluePicks, ...redPicks].filter(Boolean)
@@ -362,9 +363,10 @@ export default function AnalysisScreen({ allChampions, leagues, patches, onBack 
   const updateRR   = (i, v)  => setRedRoles(p  => { const n = [...p]; n[i] = v; return n })
 
   useEffect(() => {
-    if (!hasData) { setResult(null); return }
+    if (!hasData) { setResult(null); setError(null); return }
     const timer = setTimeout(async () => {
       setLoading(true)
+      setError(null)
       try {
         const res = await fetch('/analyze-comp', {
           method:  'POST',
@@ -378,8 +380,14 @@ export default function AnalysisScreen({ allChampions, leagues, patches, onBack 
             patch_major: patch  || null,
           }),
         })
-        if (res.ok) setResult(await res.json())
-      } catch { /* ignore */ } finally {
+        if (!res.ok) {
+          setError(`Erro do servidor (${res.status}) — verifique se o backend está atualizado.`)
+          return
+        }
+        setResult(await res.json())
+      } catch {
+        setError('Não foi possível conectar ao backend. Certifique-se de que o servidor está rodando na porta 8001.')
+      } finally {
         setLoading(false)
       }
     }, 350)
@@ -519,7 +527,14 @@ export default function AnalysisScreen({ allChampions, leagues, patches, onBack 
         </div>
       )}
 
-      {!hasData && (
+      {error && (
+        <div className="an-error">
+          <span className="an-error-icon">⚠</span>
+          {error}
+        </div>
+      )}
+
+      {!hasData && !error && (
         <div className="an-empty">
           <div className="an-empty-icon">⊞</div>
           <p>Preencha pelo menos 2 campeões para ver a análise.</p>

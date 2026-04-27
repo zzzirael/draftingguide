@@ -4,6 +4,33 @@ Histórico de versões do app. Cada versão corresponde a um commit ou grupo de 
 
 ---
 
+## v0.9 — Data Dragon Images + Error Handling
+> commit `c149299` — feat: champion images via Data Dragon + analysis error feedback
+
+### Novo
+- **Imagens de campeões via Data Dragon**: todos os ícones e artes de loading são buscados do CDN da Riot em runtime — sem assets locais, sem build step
+  - `ChampImg.jsx`: componente universal com fallback elegante (iniciais em texto estilizado) caso a imagem não carregue
+  - `ddragon.js`: normalização de nomes (Wukong → MonkeyKing, LeBlanc → Leblanc, Bel'Veth → Belveth, etc.)
+  - **Pick slots**: arte de loading cinematográfica (1215×717) como background com gradiente overlay — visual semelhante ao cliente oficial do LoL
+  - **Ban slots**: ícone 24×24 com grayscale para indicar banimento
+  - **ChampionPool**: tiles com ícone 48×48 e hover com elevação dourada
+  - **SuggestionPanel**: mini avatares 26×26 nas sugestões e counters, ícone do campeão inimigo no header de cada seção de counter
+  - **DraftBoard MatchupBar**: ícone 20×20 por lado em cada matchup de lane
+  - **AnalysisScreen**: ícones em slots, dropdown de seleção, sinergias, matrix de counters, matchups e pick order stats
+  - **MenuScreen**: ícones no dropdown de busca e nos chips do pool
+
+- **Feedback de erro na Análise de Draft**: a tela de análise agora mostra mensagem clara quando o backend está offline ou retorna erro
+  - Antes: tela vazia sem nenhum feedback
+  - Agora: banner vermelho com mensagem explicativa (e.g. "Não foi possível conectar ao backend. Certifique-se de que o servidor está rodando na porta 8001.")
+
+### Técnico
+- `frontend/src/utils/ddragon.js`: novo utilitário — dict de overrides de nomes, `initDDVersion(v)`, `champIconUrl(name)`, `champLoadingUrl(name)`
+- `frontend/src/components/ChampImg.jsx`: novo componente com `onError` fallback
+- `App.jsx`: fetch da versão atual do ddragon no `useEffect` inicial (`ddragon.leagueoflegends.com/api/versions.json`)
+- `AnalysisScreen.jsx`: `error` state + catch explícito + banner de erro no JSX; empty state condicionado a `!error`
+
+---
+
 ## v0.8 — Tela de Análise + Integração Leaguepedia
 > commit `pending` — feat: post-game draft analysis screen and Leaguepedia pick order pipeline
 
